@@ -21,8 +21,27 @@ var db = new sqlite3.Database(db_filename, sqlite3.OPEN_READONLY, (err) => {
     }
     else {
         console.log('Now connected to ' + db_filename);
+        TestSql();
     }
 });
+
+function TestSql() {
+
+	let sql = 'SELECT * FROM consumption WHERE year = ?';
+
+	db.all(sql, ['2017'], (err, rows) => {
+
+		if(err){
+			throw err;
+
+		}
+		rows.forEach((row) => {
+			console.log(row);
+		});
+	});
+}
+
+		
 
 app.use(express.static(public_dir));
 
@@ -32,6 +51,9 @@ app.get('/', (req, res) => {
     ReadFile(path.join(template_dir, 'index.html')).then((template) => {
         let response = template;
         // modify `response` here
+        template = template.toString();
+        template = template.replace('!COALCOUNT!', '10');
+
         WriteHtml(res, response);
     }).catch((err) => {
         Write404Error(res);
