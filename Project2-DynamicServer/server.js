@@ -2,7 +2,6 @@
 var fs = require('fs')
 var path = require('path')
 
-
 // NPM modules
 var express = require('express')
 var sqlite3 = require('sqlite3')
@@ -43,7 +42,7 @@ function CoalTestSql() {
 
 			});
 
-			console.log(coalSum + "one");
+			//console.log(coalSum + "one");
 			res(coalSum);
 
 		});
@@ -51,6 +50,28 @@ function CoalTestSql() {
 	});
 }
 
+function NaturalGasTestSql() {
+	return new Promise( function(res,rej) {
+		naturalSum = 0;
+
+		let sql = 'SELECT natural_gas FROM consumption WHERE year = ?';
+
+		db.all(sql, ['2017'], (err, rows) => {
+
+			if(err){
+				rej(err);
+			}
+			rows.forEach((row) => {
+				naturalSum = naturalSum + row.natural_gas;
+
+			});
+
+			console.log(naturalSum + " one");
+			res(naturalSum);
+		});
+	
+	});
+}
 		
 
 app.use(express.static(public_dir));
@@ -58,20 +79,24 @@ app.use(express.static(public_dir));
 
 // GET request handler for '/' HOME PAGE
 app.get('/', (req, res) => {
-	
-    //var coal = coalsum.toString();
 
     ReadFile(path.join(template_dir, 'index.html')).then((template) => {
-        var coal;
+        //var coal;
     	CoalTestSql().then(function(coalSum) {
-    		console.log(coalSum);
-    		template = template.toString();
-	        template = template.replace('!COALCOUNT!', coalSum);
-	        let response = template;
-
-	        WriteHtml(res, response);
-	    });
-
+			NaturalGasTestSql().then(function(naturalSum) {
+				
+				//console.log(coalSum);
+				template = template.toString();
+				template = template.replace('!COALCOUNT!', coalSum);
+				template = template.replace('!NATURALCOUNT!', naturalSum);
+				
+				let response = template;
+				WriteHtml(res, response);
+				
+			});
+		WriteHtml(res, response);
+			
+		});
         //console.log(coal + " COAL SUM ");
 
         // modify `response` here
@@ -79,7 +104,9 @@ app.get('/', (req, res) => {
     }).catch((err) => {
         Write404Error(res);
     });
+
 });
+
 
 // GET request handler for '/year/*'
 app.get('/year/:selected_year', (req, res) => {
@@ -104,7 +131,8 @@ app.get('/state/:selected_state', (req, res) => {
         // modify `response` here
         template = template.toString();
         template = template.replace('!STATE!', req.params.selected_state);
-
+		template = template.replace('noimage', req.params.selected_state);
+		template = template.replace('No Image', req.params.selected_state);
         let response = template;
         WriteHtml(res, response);
 
