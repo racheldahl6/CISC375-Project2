@@ -131,8 +131,11 @@ app.get('/state/:selected_state', (req, res) => {
         // modify `response` here
         template = template.toString();
         template = template.replace('!STATE!', req.params.selected_state);
+		//lookup state_abbreviation in state table and find corresponding full state name
+		
 		template = template.replace('noimage', req.params.selected_state);
 		template = template.replace('No Image', req.params.selected_state);
+
         let response = template;
         WriteHtml(res, response);
 
