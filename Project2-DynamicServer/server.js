@@ -44,9 +44,7 @@ function CoalTestSql() {
 
 			//console.log(coalSum + "one");
 			res(coalSum);
-
 		});
-	
 	});
 }
 
@@ -82,20 +80,15 @@ app.get('/', (req, res) => {
 
     ReadFile(path.join(template_dir, 'index.html')).then((template) => {
         //var coal;
-    	CoalTestSql().then(function(coalSum) {
-			NaturalGasTestSql().then(function(naturalSum) {
+    	Promise.all([CoalTestSql(), NaturalGasTestSql()]).then((results) => {
+			template = template.toString();
+			//results = results[0].replace('!COALCOUNT!', results[1]);
+			//console.log(coalSum);
+			template = template.replace('!COALCOUNT!', results[0]);
+			template = template.replace('!NATURALCOUNT!', results[1]);	
+			let response = template;
+			WriteHtml(res, response);
 				
-				//console.log(coalSum);
-				template = template.toString();
-				template = template.replace('!COALCOUNT!', coalSum);
-				template = template.replace('!NATURALCOUNT!', naturalSum);
-				
-				let response = template;
-				WriteHtml(res, response);
-				
-			});
-		WriteHtml(res, response);
-			
 		});
         //console.log(coal + " COAL SUM ");
 
