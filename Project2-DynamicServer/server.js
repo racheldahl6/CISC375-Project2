@@ -72,6 +72,30 @@ function NaturalGasTestSql() {
 }
         
 
+function NaturalGasTestSql() {
+	return new Promise( function(res,rej) {
+		naturalSum = 0;
+
+		let sql = 'SELECT natural_gas FROM consumption WHERE year = ?';
+
+		db.all(sql, ['2017'], (err, rows) => {
+
+			if(err){
+				rej(err);
+			}
+			rows.forEach((row) => {
+				naturalSum = naturalSum + row.natural_gas;
+
+			});
+
+			console.log(naturalSum + " one");
+			res(naturalSum);
+		});
+	
+	});
+}
+		
+
 app.use(express.static(public_dir));
 
 
@@ -79,7 +103,7 @@ app.use(express.static(public_dir));
 app.get('/', (req, res) => {
 
     ReadFile(path.join(template_dir, 'index.html')).then((template) => {
-        //var coal;
+
         Promise.all([CoalTestSql(), NaturalGasTestSql()]).then((results) => {
             template = template.toString();
             //results = results[0].replace('!COALCOUNT!', results[1]);
@@ -124,10 +148,16 @@ app.get('/state/:selected_state', (req, res) => {
         // modify `response` here
         template = template.toString();
         template = template.replace('!STATE!', req.params.selected_state);
+
         //lookup state_abbreviation in state table and find corresponding full state name
         
         template = template.replace('noimage', req.params.selected_state);
         template = template.replace('No Image', req.params.selected_state);
+
+		//lookup state_abbreviation in state table and find corresponding full state name
+		
+		template = template.replace('noimage', req.params.selected_state);
+		template = template.replace('No Image', req.params.selected_state);
 
         let response = template;
         WriteHtml(res, response);
