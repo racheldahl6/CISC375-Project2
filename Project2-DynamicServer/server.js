@@ -94,8 +94,119 @@ function NaturalGasTestSql() {
 	
 	});
 }
-		
+	
+function NuclearTestSql() {
+    return new Promise( function(res,rej) {
+        nuclearSum = 0;
 
+        let sql = 'SELECT nuclear FROM consumption WHERE year = ?';
+
+        db.all(sql, ['2017'], (err, rows) => {
+
+            if(err){
+                rej(err);
+            }
+            rows.forEach((row) => {
+                nuclearSum = nuclearSum + row.nuclear;
+
+            });
+
+            console.log(nuclearSum + " one");
+            res(nuclearSum);
+        });
+    
+    });
+}	
+
+function PetroleumTestSql() {
+    return new Promise( function(res,rej) {
+        petroleumSum = 0;
+
+        let sql = 'SELECT petroleum FROM consumption WHERE year = ?';
+
+        db.all(sql, ['2017'], (err, rows) => {
+
+            if(err){
+                rej(err);
+            }
+            rows.forEach((row) => {
+                petroleumSum = petroleumSum + row.petroleum;
+
+            });
+
+            console.log(petroleumSum + " one");
+            res(petroleumSum);
+        });
+    
+    });
+}   
+
+function RenewableTestSql() {
+    return new Promise( function(res,rej) {
+        renewableSum = 0;
+
+        let sql = 'SELECT renewable FROM consumption WHERE year = ?';
+
+        db.all(sql, ['2017'], (err, rows) => {
+
+            if(err){
+                rej(err);
+            }
+            rows.forEach((row) => {
+                
+                renewableSum = renewableSum + row.renewable;
+            });
+
+            console.log(renewableSum + " one");
+            res(renewableSum);
+        });
+    
+    });
+}   
+
+function GetConsumptionForIndexTable(year) {
+    return new Promise( function(res,rej) {
+        let sql = 'SELECT * FROM consumption WHERE year = ?';
+        var table = "";
+        db.all(sql, [year], (err, rows) => {
+
+            if(err){
+                rej(err);
+            }
+            rows.forEach((row) => {
+                console.log(row);
+                //total = total + row.coal + row.natural_gas + row.nuclear + row.petroleum + row.renewable;
+                table += "<tr> "+ "<td>"+ row.state_abbreviation + "</td>" + "<td>"+ row.coal + "</td>" + "<td>"+ row.natural_gas + "</td>" + "<td>" + row.nuclear + "</td>" + "<td>" + row.petroleum+ "</td>"+ "<td>" + row.renewable + "</td>" +"</tr>";
+              
+            });
+
+            res(table);
+        });
+    });
+        
+
+}
+function GetConsumptionForYearTable(year) {
+    return new Promise( function(res,rej) {
+        let sql = 'SELECT * FROM consumption WHERE year = ?';
+        var table = "";
+        var total = 0;
+        db.all(sql, [year], (err, rows) => {
+
+            if(err){
+                rej(err);
+            }
+            rows.forEach((row) => {
+                console.log(row);
+                total = total + row.coal + row.natural_gas + row.nuclear + row.petroleum + row.renewable;
+                table += "<tr> "+ "<td>"+ row.state_abbreviation + "</td>" + "<td>"+ row.coal + "</td>" + "<td>"+ row.natural_gas + "</td>" + "<td>" + row.nuclear + "</td>" + "<td>" + row.petroleum+ "</td>"+ "<td>" + row.renewable + "</td>" + "<td>"+ total + "</td>" + "</tr>";
+              
+            });
+
+            res(table);
+        });
+    });
+}
 app.use(express.static(public_dir));
 
 
@@ -104,12 +215,17 @@ app.get('/', (req, res) => {
 
     ReadFile(path.join(template_dir, 'index.html')).then((template) => {
 
-        Promise.all([CoalTestSql(), NaturalGasTestSql()]).then((results) => {
+        Promise.all([CoalTestSql(), NaturalGasTestSql(), NuclearTestSql(), PetroleumTestSql(), RenewableTestSql(), GetConsumptionForIndexTable(2017)]).then((results) => {
             template = template.toString();
             //results = results[0].replace('!COALCOUNT!', results[1]);
             //console.log(coalSum);
             template = template.replace('!COALCOUNT!', results[0]);
             template = template.replace('!NATURALCOUNT!', results[1]);  
+            template = template.replace('!NUCLEARCOUNT!', results[2]);
+            template = template.replace('!PETROLEUMCOUNT!', results[3]); 
+            template = template.replace('!RENEWABLECOUNT!', results[4]); 
+            template = template.replace('!DATAHERE!', results[5]); 
+
             let response = template;
             WriteHtml(res, response);
                 
@@ -128,14 +244,18 @@ app.get('/', (req, res) => {
 // GET request handler for '/year/*'
 app.get('/year/:selected_year', (req, res) => {
     ReadFile(path.join(template_dir, 'year.html')).then((template) => {
+        Promise.all([GetConsumptionForYearTable(req.params.selected_year)]).then((results) => {
+            template = template.toString();
+            
+            template = template.replace('!YEAR!', req.params.selected_year);
+            template = template.replace('!DATAHERE!', results[0]); 
 
+            let response = template;
+            WriteHtml(res, response);
+            
+        });
         // modify `response` here
-        template = template.toString();
-        //console.log(req.params.selected_year);
-        template = template.replace('!YEAR!', req.params.selected_year);
-
-        let response = template;
-        WriteHtml(res, response);
+       
     }).catch((err) => {
         Write404Error(res);
     });
