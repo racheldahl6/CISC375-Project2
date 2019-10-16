@@ -197,7 +197,7 @@ function GetConsumptionForYearTable(year) {
                 rej(err);
             }
             rows.forEach((row) => {
-                console.log(row);
+                //console.log(row);
                 total = total + row.coal + row.natural_gas + row.nuclear + row.petroleum + row.renewable;
                 table += "<tr> "+ "<td>"+ row.state_abbreviation + "</td>" + "<td>"+ row.coal + "</td>" + "<td>"+ row.natural_gas + "</td>" + "<td>" + row.nuclear + "</td>" + "<td>" + row.petroleum+ "</td>"+ "<td>" + row.renewable + "</td>" + "<td>"+ total + "</td>" + "</tr>";
               
@@ -209,6 +209,28 @@ function GetConsumptionForYearTable(year) {
 }
 app.use(express.static(public_dir));
 
+function GetConsumptionForStateTable(state) {
+    return new Promise( function(res,rej) {
+        let sql = 'SELECT * FROM consumption WHERE state_abbreviation = ?';
+        var table = "";
+        var total = 0;
+        db.all(sql, [state], (err, rows) => {
+
+            if(err){
+                rej(err);
+            }
+            rows.forEach((row) => {
+                console.log(row);
+                total = total + row.coal + row.natural_gas + row.nuclear + row.petroleum + row.renewable;
+                table += "<tr> "+ "<td>"+ row.year + "</td>" + "<td>"+ row.coal + "</td>" + "<td>"+ row.natural_gas + "</td>" + "<td>" + row.nuclear + "</td>" + "<td>" + row.petroleum+ "</td>"+ "<td>" + row.renewable + "</td>" + "<td>"+ total + "</td>" + "</tr>";
+              
+            });
+
+            res(table);
+        });
+    });
+}
+app.use(express.static(public_dir));
 
 // GET request handler for '/' HOME PAGE
 app.get('/', (req, res) => {
@@ -265,22 +287,27 @@ app.get('/year/:selected_year', (req, res) => {
 app.get('/state/:selected_state', (req, res) => {
     ReadFile(path.join(template_dir, 'state.html')).then((template) => {
         
-        // modify `response` here
-        template = template.toString();
-        template = template.replace('!STATE!', req.params.selected_state);
+        Promise.all([GetConsumptionForStateTable(req.params.selected_state)]).then((results) => {
 
-        //lookup state_abbreviation in state table and find corresponding full state name
-        
-        template = template.replace('noimage', req.params.selected_state);
-        template = template.replace('No Image', req.params.selected_state);
+            template = template.toString();
+            template = template.replace('!STATE!', req.params.selected_state);
 
-		//lookup state_abbreviation in state table and find corresponding full state name
-		
-		template = template.replace('noimage', req.params.selected_state);
-		template = template.replace('No Image', req.params.selected_state);
+            //lookup state_abbreviation in state table and find corresponding full state name
+            
+            template = template.replace('noimage', req.params.selected_state);
+            template = template.replace('No Image', req.params.selected_state);
 
-        let response = template;
-        WriteHtml(res, response);
+    		//lookup state_abbreviation in state table and find corresponding full state name
+    		
+    		template = template.replace('noimage', req.params.selected_state);
+    		template = template.replace('No Image', req.params.selected_state);
+
+            //populate state table 
+            template = template.replace('!DATAHERE!', results[0]); 
+
+            let response = template;
+            WriteHtml(res, response);
+        });
 
     }).catch((err) => {
         Write404Error(res);
