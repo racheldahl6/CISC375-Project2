@@ -25,6 +25,7 @@ var db = new sqlite3.Database(db_filename, sqlite3.OPEN_READONLY, (err) => {
     }
 });
 
+// -------------------------INDEX VARIABLES----------------------------------
 function CoalTestSql() {
     return new Promise( function(res,rej) {
         coalSum = 0;
@@ -71,29 +72,6 @@ function NaturalGasTestSql() {
     });
 }
         
-
-function NaturalGasTestSql() {
-	return new Promise( function(res,rej) {
-		naturalSum = 0;
-
-		let sql = 'SELECT natural_gas FROM consumption WHERE year = ?';
-
-		db.all(sql, ['2017'], (err, rows) => {
-
-			if(err){
-				rej(err);
-			}
-			rows.forEach((row) => {
-				naturalSum = naturalSum + row.natural_gas;
-
-			});
-
-			console.log(naturalSum + " one");
-			res(naturalSum);
-		});
-	
-	});
-}
 	
 function NuclearTestSql() {
     return new Promise( function(res,rej) {
@@ -163,7 +141,31 @@ function RenewableTestSql() {
     
     });
 }   
+//-----------------------------STATE VARIABLES -----------------------------
+function StateCoalTestSql(state) {
+    return new Promise( function(res,rej) {
+        var coalSum = 0;
 
+        let sql = 'SELECT coal FROM consumption WHERE state_abbreviation = ?';
+
+        db.all(sql, [state], (err, rows) => {
+
+            if(err){
+                rej(err);
+            }
+            rows.forEach((row) => {
+                
+                coalSum = coalSum + row.coal;
+            });
+
+            console.log(coalSum + " STATW COAL SUM");
+            res(coalSum);
+        });
+    
+    });
+}   
+
+//------------------Dynamic Tables (Year State and Energy)----------------
 function GetConsumptionForIndexTable(year) {
     return new Promise( function(res,rej) {
         let sql = 'SELECT * FROM consumption WHERE year = ?';
@@ -220,7 +222,7 @@ function GetConsumptionForStateTable(state) {
                 rej(err);
             }
             rows.forEach((row) => {
-                console.log(row);
+                //console.log(row);
                 total = total + row.coal + row.natural_gas + row.nuclear + row.petroleum + row.renewable;
                 table += "<tr> "+ "<td>"+ row.year + "</td>" + "<td>"+ row.coal + "</td>" + "<td>"+ row.natural_gas + "</td>" + "<td>" + row.nuclear + "</td>" + "<td>" + row.petroleum+ "</td>"+ "<td>" + row.renewable + "</td>" + "<td>"+ total + "</td>" + "</tr>";
               
@@ -232,6 +234,7 @@ function GetConsumptionForStateTable(state) {
 }
 app.use(express.static(public_dir));
 
+// -------------------------------GET REQUESTS----------------------------------
 // GET request handler for '/' HOME PAGE
 app.get('/', (req, res) => {
 
@@ -262,10 +265,10 @@ app.get('/', (req, res) => {
 
 });
 
-
 // GET request handler for '/year/*'
 app.get('/year/:selected_year', (req, res) => {
     ReadFile(path.join(template_dir, 'year.html')).then((template) => {
+
         Promise.all([GetConsumptionForYearTable(req.params.selected_year)]).then((results) => {
             template = template.toString();
             
@@ -286,18 +289,15 @@ app.get('/year/:selected_year', (req, res) => {
 // GET request handler for '/state/*'
 app.get('/state/:selected_state', (req, res) => {
     ReadFile(path.join(template_dir, 'state.html')).then((template) => {
-        
-        Promise.all([GetConsumptionForStateTable(req.params.selected_state)]).then((results) => {
+        var state = req.params.selected_state;
+        Promise.all([GetConsumptionForStateTable(state), StateCoalTestSql(state)]).then((results) => {
 
             template = template.toString();
             template = template.replace('!STATE!', req.params.selected_state);
-
-            //lookup state_abbreviation in state table and find corresponding full state name
-            
+           
+            //populate image 
             template = template.replace('noimage', req.params.selected_state);
             template = template.replace('No Image', req.params.selected_state);
-
-    		//lookup state_abbreviation in state table and find corresponding full state name
     		
     		template = template.replace('noimage', req.params.selected_state);
     		template = template.replace('No Image', req.params.selected_state);
@@ -305,8 +305,15 @@ app.get('/state/:selected_state', (req, res) => {
             //populate state table 
             template = template.replace('!DATAHERE!', results[0]); 
 
+            //populate variables
+            template = template.replace('!COALCOUNT!', results[1]);
+            
             let response = template;
             WriteHtml(res, response);
+
+
+            //lookup state_abbreviation in state table and find corresponding full state name
+
         });
 
     }).catch((err) => {
