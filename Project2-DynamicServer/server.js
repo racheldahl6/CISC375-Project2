@@ -39,7 +39,6 @@ function CoalTestSql(year) {
             rows.forEach((row) => {
                 coalSum = coalSum + row.coal;
             });
-            //console.log(coalSum + "one");
             res(coalSum);
         });
     });
@@ -56,13 +55,10 @@ function NaturalGasTestSql(year) {
             rows.forEach((row) => {
                 naturalSum = naturalSum + row.natural_gas;
             });
-            //console.log(naturalSum + " one");
             res(naturalSum);
         });
     });
 }
-        
-
 
 function NuclearTestSql(year) {
 
@@ -76,7 +72,6 @@ function NuclearTestSql(year) {
             rows.forEach((row) => {
                 nuclearSum = nuclearSum + row.nuclear;
             });
-            //console.log(nuclearSum + " one");
             res(nuclearSum);
         });
     });
@@ -93,7 +88,6 @@ function PetroleumTestSql(year) {
             rows.forEach((row) => {
                 petroleumSum = petroleumSum + row.petroleum;
             });
-            //console.log(petroleumSum + " one");
             res(petroleumSum);
         });
     });
@@ -110,7 +104,6 @@ function RenewableTestSql(year) {
             rows.forEach((row) => { 
                 renewableSum = renewableSum + row.renewable;
             });
-            //console.log(renewableSum + " one");
             res(renewableSum);
         });
     });
@@ -292,9 +285,6 @@ app.get('/state/:selected_state', (req, res) => {
             //populate image 
             template = template.replace('noimage', req.params.selected_state);
             template = template.replace('No Image', req.params.selected_state);
-    		
-    		template = template.replace('noimage', req.params.selected_state);
-    		template = template.replace('No Image', req.params.selected_state);
 
         Promise.all([CoalTestSql(req.params.selected_year), NaturalGasTestSql(req.params.selected_year), NuclearTestSql(req.params.selected_year), PetroleumTestSql(req.params.selected_year), RenewableTestSql(req.params.selected_year),GetConsumptionForStateTable(req.params.selected_state)]).then((results) => {
 
@@ -305,9 +295,6 @@ app.get('/state/:selected_state', (req, res) => {
             template = template.replace('!PETROLEUMCOUNT!', results[3]); 
             template = template.replace('!RENEWABLECOUNT!', results[4]); 
             template = template.replace('!DATAHERE!', results[5]); 
-
-       
-            template = template.replace('!COALCOUNT!', results[1]);
             
             let response = template;
             WriteHtml(res, response);
