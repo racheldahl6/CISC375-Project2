@@ -215,6 +215,25 @@ function GetConsumptionForEnergyTable(energysource) {
     });
 }
 
+//function for getting full state name from state abbreviation
+function GetFullStateName(stateabbrev) {
+    return new Promise( function(res,rej) {
+        let sql = 'SELECT state_name FROM States WHERE state_abbreviation = (SELECT state_abbreviation FROM Consumption WHERE state_abbreviation = ?)';
+        var fullName = "";
+        var total = 0;
+        db.all(sql, [stateabbrev], (err, rows) => {
+            if(err){
+                rej(err);
+            }
+		    rows.forEach((row) =>{
+				var fullName = row.state_name;
+				console.log(fullName + " fullname" );
+            });
+            res(fullName);
+        });
+    });
+}
+
 // -------------------------------GET REQUESTS----------------------------------
 // GET request handler for '/' HOME PAGE
 app.get('/', (req, res) => {
@@ -280,21 +299,25 @@ app.get('/state/:selected_state', (req, res) => {
         var state = req.params.selected_state;
 
             template = template.toString();
-            template = template.replace('!STATE!', req.params.selected_state);
-           
+			//GetFullStateName(req.params.selected_state).then((fullName) =>{	
+				//template = template.replace('!STATE!');
+            //});
             //populate image 
             template = template.replace('noimage', req.params.selected_state);
             template = template.replace('No Image', req.params.selected_state);
 
-        Promise.all([CoalTestSql(req.params.selected_year), NaturalGasTestSql(req.params.selected_year), NuclearTestSql(req.params.selected_year), PetroleumTestSql(req.params.selected_year), RenewableTestSql(req.params.selected_year),GetConsumptionForStateTable(req.params.selected_state)]).then((results) => {
+        Promise.all([GetFullStateName(req.params.selected_state), CoalTestSql(req.params.selected_year), NaturalGasTestSql(req.params.selected_year), NuclearTestSql(req.params.selected_year), PetroleumTestSql(req.params.selected_year), RenewableTestSql(req.params.selected_year),GetConsumptionForStateTable(req.params.selected_state)]).then((results) => {
 
             //populate state table 
-			template = template.replace('!COALCOUNT!', results[0]);
-            template = template.replace('!NATURALCOUNT!', results[1]);  
-            template = template.replace('!NUCLEARCOUNT!', results[2]);
-            template = template.replace('!PETROLEUMCOUNT!', results[3]); 
-            template = template.replace('!RENEWABLECOUNT!', results[4]); 
-            template = template.replace('!DATAHERE!', results[5]); 
+			template = template.replace('!STATENAME!', results[0]);
+			template = template.replace('!STATE!', results[0]);
+			//console.log(results[0] + 'results0');
+			template = template.replace('!COALCOUNT!', results[1]);
+            template = template.replace('!NATURALCOUNT!', results[2]);  
+            template = template.replace('!NUCLEARCOUNT!', results[3]);
+            template = template.replace('!PETROLEUMCOUNT!', results[4]); 
+            template = template.replace('!RENEWABLECOUNT!', results[5]); 
+            template = template.replace('!DATAHERE!', results[6]); 
             
             let response = template;
             WriteHtml(res, response);
