@@ -306,6 +306,19 @@ app.get('/state/:selected_state', (req, res) => {
             template = template.replace('noimage', req.params.selected_state);
             template = template.replace('No Image', req.params.selected_state);
 
+        Promise.all([StateCoalTestSql(state), GetConsumptionForStateTable(state)]).then((results) => {
+            console.log(results[0]);
+            //populate state variables 
+			template = template.replace('!COALCOUNT!', results[0]);
+            console.log(template);
+            /*template = template.replace('!NATURALCOUNT!', results[1]);  
+            template = template.replace('!NUCLEARCOUNT!', results[2]);
+            template = template.replace('!PETROLEUMCOUNT!', results[3]); 
+            template = template.replace('!RENEWABLECOUNT!', results[4]); */
+
+            //state table 
+            template = template.replace('!DATAHERE!', results[1]); 
+
         Promise.all([GetFullStateName(req.params.selected_state), CoalTestSql(req.params.selected_year), NaturalGasTestSql(req.params.selected_year), NuclearTestSql(req.params.selected_year), PetroleumTestSql(req.params.selected_year), RenewableTestSql(req.params.selected_year),GetConsumptionForStateTable(req.params.selected_state)]).then((results) => {
 
             //populate state table 
@@ -318,6 +331,7 @@ app.get('/state/:selected_state', (req, res) => {
             template = template.replace('!PETROLEUMCOUNT!', results[4]); 
             template = template.replace('!RENEWABLECOUNT!', results[5]); 
             template = template.replace('!DATAHERE!', results[6]); 
+
             
             let response = template;
             WriteHtml(res, response);
