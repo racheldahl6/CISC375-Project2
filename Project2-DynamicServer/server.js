@@ -75,7 +75,7 @@ function NuclearTestSql(year) {
             res(nuclearSum);
         });
     });
-}	
+}   
 
 function PetroleumTestSql(year) {
     return new Promise( function(res,rej) {
@@ -111,9 +111,9 @@ function RenewableTestSql(year) {
 //-----------------------------STATE VARIABLES -----------------------------
 function StateCoalTestSql(state) {
     return new Promise( function(res,rej) {
-        var coalSum = 0;
+        var coalSum = [];
 
-        let sql = 'SELECT coal FROM consumption WHERE state_abbreviation = ?';
+        let sql = 'SELECT coal FROM consumption WHERE state_abbreviation = ? ORDER BY year';
 
         db.all(sql, [state], (err, rows) => {
 
@@ -122,16 +122,46 @@ function StateCoalTestSql(state) {
             }
             rows.forEach((row) => {
                 
-                coalSum = coalSum + row.coal;
+                coalSum.push(row.coal);
             });
 
-            console.log(coalSum + " STATE COAL SUM");
-            res(coalSum);
+
+            //console.log(coalSum + " STATE COAL SUM");
+            res(JSON.stringify(coalSum));
         });
     
     });
 }   
 
+//--------------------ENERGY VARIABLES -----------------------------------------//
+// Select * FROM Consumption order by year
+/*function GetEnergyArray(energy)
+{
+    return new Promise( function(res,rej) {
+        let sql = 'SELECT * FROM Consumption ORDER BY year';
+        var energyObject = {};
+        energyArray = [];
+        db.all(sql, (err, rows) => {
+            if(err){
+                rej(err);
+            }
+
+            rows.forEach((row) => {
+                console.log(row);
+                var key = row.state_abbreviation;
+                key.toString();
+                energyObject.push({key: energyArray});
+                //energyObject[key].push(row.energy);
+            });
+
+            console.log("ENERGY OBJECT" + energyObject);
+            res(energyObject);
+        });
+    })
+
+}*/
+//build object 
+// Object["row_abbrevation"].push(row.coal)
 //------------------Dynamic Tables (Year State and Energy)----------------
 
 function GetConsumptionForIndexTable(year) {
@@ -218,18 +248,18 @@ function GetConsumptionForEnergyTable(energysource) {
 //function for getting full state name from state abbreviation
 function GetFullStateName(stateabbrev) {
     return new Promise( function(res,rej) {
-        let sql = 'SELECT state_name FROM States WHERE state_abbreviation = (SELECT state_abbreviation FROM Consumption WHERE state_abbreviation = ?)';
+        let sql = 'SELECT state_name FROM States WHERE state_abbreviation = ?';
         var fullName = "";
         var total = 0;
-        db.all(sql, [stateabbrev], (err, rows) => {
+        db.get(sql, [stateabbrev], (err, row) => {
             if(err){
                 rej(err);
             }
-		    rows.forEach((row) =>{
-				var fullName = row.state_name;
-				console.log(fullName + " fullname" );
-            });
-            res(fullName);
+            
+            var fullName = "";
+            var fullName = row.state_name;
+            res(fullName)
+
         });
     });
 }
@@ -274,7 +304,7 @@ app.get('/year/:selected_year', (req, res) => {
             template = template.toString();
             
             template = template.replace('!YEAR!', req.params.selected_year);
-			template = template.replace('!COALCOUNT!', results[0]);
+            template = template.replace('!COALCOUNT!', results[0]);
             template = template.replace('!NATURALCOUNT!', results[1]);  
             template = template.replace('!NUCLEARCOUNT!', results[2]);
             template = template.replace('!PETROLEUMCOUNT!', results[3]); 
@@ -299,40 +329,31 @@ app.get('/state/:selected_state', (req, res) => {
         var state = req.params.selected_state;
 
             template = template.toString();
-			//GetFullStateName(req.params.selected_state).then((fullName) =>{	
-				//template = template.replace('!STATE!');
+            //GetFullStateName(req.params.selected_state).then((fullName) =>{   
+                //template = template.replace('!STATE!');
             //});
             //populate image 
             template = template.replace('noimage', req.params.selected_state);
             template = template.replace('No Image', req.params.selected_state);
 
-        Promise.all([StateCoalTestSql(state), GetConsumptionForStateTable(state)]).then((results) => {
-            console.log(results[0]);
+        Promise.all([StateCoalTestSql(state), GetConsumptionForStateTable(state), GetFullStateName(state)]).then((results) => {
+            //console.log(results);
+            //404 ERROR // check if results is empty array, then send a customized response 
             //populate state variables 
-			template = template.replace('!COALCOUNT!', results[0]);
-            console.log(template);
+            template = template.replace('!COALCOUNT!', results[0]);
+            //console.log(template);
             /*template = template.replace('!NATURALCOUNT!', results[1]);  
             template = template.replace('!NUCLEARCOUNT!', results[2]);
             template = template.replace('!PETROLEUMCOUNT!', results[3]); 
             template = template.replace('!RENEWABLECOUNT!', results[4]); */
 
             //state table 
+           // console.log(results[2]);
             template = template.replace('!DATAHERE!', results[1]); 
+            template = template.replace('!STATE!', results[2]); 
+            template = template.replace('!STATENAME!', results[2]); 
 
-        Promise.all([GetFullStateName(req.params.selected_state), CoalTestSql(req.params.selected_year), NaturalGasTestSql(req.params.selected_year), NuclearTestSql(req.params.selected_year), PetroleumTestSql(req.params.selected_year), RenewableTestSql(req.params.selected_year),GetConsumptionForStateTable(req.params.selected_state)]).then((results) => {
-
-            //populate state table 
-			template = template.replace('!STATENAME!', results[0]);
-			template = template.replace('!STATE!', results[0]);
-			//console.log(results[0] + 'results0');
-			template = template.replace('!COALCOUNT!', results[1]);
-            template = template.replace('!NATURALCOUNT!', results[2]);  
-            template = template.replace('!NUCLEARCOUNT!', results[3]);
-            template = template.replace('!PETROLEUMCOUNT!', results[4]); 
-            template = template.replace('!RENEWABLECOUNT!', results[5]); 
-            template = template.replace('!DATAHERE!', results[6]); 
-
-            
+        
             let response = template;
             WriteHtml(res, response);
 
@@ -349,15 +370,21 @@ app.get('/state/:selected_state', (req, res) => {
 // GET request handler for '/energy-type/*'
 app.get('/energy-type/:selected_energy_type', (req, res) => {
     ReadFile(path.join(template_dir, 'energy.html')).then((template) => {
-		Promise.all([GetConsumptionForEnergyTable(req.params.selected_energy_type)]).then((results) => {
+        Promise.all([GetConsumptionForEnergyTable(req.params.selected_energy_type)/*GetEnergyArray(req.params.selected_energy_type)*/]).then((results) => {
  
-			template = template.toString();
-			template = template.replace('!ENERGY!', req.params.selected_energy_type);
+            template = template.toString();
+            template = template.replace('!ENERGY!', req.params.selected_energy_type);
+            template = template.replace('!ENERGYARRAY!', results[1]);
+            //variables
 
-			let response = template;
-			WriteHtml(res, response);
-		});
-		
+            //images
+            template = template.replace('noimage', req.params.selected_energy_type);
+            template = template.replace('No Image', req.params.selected_energy_type);
+
+            let response = template;
+            WriteHtml(res, response);
+        });
+        
     }).catch((err) => {
         Write404Error(res);
     });
