@@ -198,7 +198,7 @@ function GetConsumptionForStateTable(state) {
 //function for table on energy page
 function GetConsumptionForEnergyTable(energysource) {
     return new Promise( function(res,rej) {
-        let sql = 'SELECT ? FROM consumption WHERE state_abbreviation = "MN"';
+        let sql = 'SELECT ? FROM consumption WHERE state_abbreviation = ?';
         var table = "";
         var total = 0;
         db.all(sql, [energysource], (err, rows) => {
