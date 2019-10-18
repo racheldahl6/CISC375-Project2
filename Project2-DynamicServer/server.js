@@ -132,7 +132,101 @@ function StateCoalTestSql(state) {
     
     });
 }   
+function StateNaturalTestSql(state) {
+    return new Promise( function(res,rej) {
+        var naturalSum = [];
 
+        let sql = 'SELECT natural_gas FROM consumption WHERE state_abbreviation = ? ORDER BY year';
+
+        db.all(sql, [state], (err, rows) => {
+
+            if(err){
+                rej(err);
+            }
+            rows.forEach((row) => {
+                
+                naturalSum.push(row.natural_gas);
+            });
+
+
+            //console.log(coalSum + " STATE COAL SUM");
+            res(JSON.stringify(naturalSum));
+        });
+    
+    });
+}   
+
+function StateNuclearTestSql(state) {
+    return new Promise( function(res,rej) {
+        var nuclearSum = [];
+
+        let sql = 'SELECT nuclear FROM consumption WHERE state_abbreviation = ? ORDER BY year';
+
+        db.all(sql, [state], (err, rows) => {
+
+            if(err){
+                rej(err);
+            }
+            rows.forEach((row) => {
+              
+                nuclearSum.push(row.nuclear);
+            });
+
+
+            //console.log(coalSum + " STATE COAL SUM");
+            res(JSON.stringify(nuclearSum));
+        });
+    
+    });
+} 
+
+function StatePetroleumTestSql(state) {
+    return new Promise( function(res,rej) {
+        var petroleumSum = [];
+
+        let sql = 'SELECT petroleum FROM consumption WHERE state_abbreviation = ? ORDER BY year';
+
+        db.all(sql, [state], (err, rows) => {
+
+            if(err){
+                rej(err);
+            }
+            rows.forEach((row) => {
+              
+                petroleumSum.push(row.petroleum);
+            });
+
+
+            //console.log(coalSum + " STATE COAL SUM");
+            res(JSON.stringify(petroleumSum));
+        });
+    
+    });
+} 
+
+function StateRenewableTestSql(state) {
+    return new Promise( function(res,rej) {
+        var renewableSum = [];
+
+        let sql = 'SELECT renewable FROM consumption WHERE state_abbreviation = ? ORDER BY year';
+
+        db.all(sql, [state], (err, rows) => {
+
+            if(err){
+                rej(err);
+            }
+            rows.forEach((row) => {
+              
+                renewableSum.push(row.renewable);
+            });
+
+
+            //console.log(coalSum + " STATE COAL SUM");
+            res(JSON.stringify(renewableSum));
+        });
+    
+    });
+} 
 //--------------------ENERGY VARIABLES -----------------------------------------//
 function GetEnergyArray(energy)
 {
@@ -251,11 +345,11 @@ function GetConsumptionForEnergyTable(energysource) {
 				
 				}
 			}
-			});
-            res(table);
-        });
+		});
+        res(table);
     });
-}
+};
+
 
 //function for getting full state name from state abbreviation
 function GetFullStateName(stateabbrev) {
@@ -346,29 +440,30 @@ app.get('/state/:selected_state', (req, res) => {
             template = template.replace('noimage', req.params.selected_state);
             template = template.replace('No Image', req.params.selected_state);
 
-        Promise.all([StateCoalTestSql(state), GetConsumptionForStateTable(state), GetFullStateName(state)]).then((results) => {
+        Promise.all([StateCoalTestSql(state), StateNaturalTestSql(state), StateNuclearTestSql(state), StatePetroleumTestSql(state),StateRenewableTestSql(state), GetConsumptionForStateTable(state), GetFullStateName(state)]).then((results) => {
             //console.log(results);
             //404 ERROR // check if results is empty array, then send a customized response 
+            
             //populate state variables 
             template = template.replace('!COALCOUNT!', results[0]);
-            //console.log(template);
-            /*template = template.replace('!NATURALCOUNT!', results[1]);  
-            template = template.replace('!NUCLEARCOUNT!', results[2]);
+            template = template.replace('!NATURALCOUNT!', results[1]);  
+            template = template.replace('!NUCLEARCOUNT!', results[2]); 
             template = template.replace('!PETROLEUMCOUNT!', results[3]); 
-            template = template.replace('!RENEWABLECOUNT!', results[4]); */
+            template = template.replace('!RENEWABLECOUNT!', results[4]);
 
             //state table 
-           // console.log(results[2]);
-            template = template.replace('!DATAHERE!', results[1]); 
-            template = template.replace('!STATE!', results[2]); 
-            template = template.replace('!STATENAME!', results[2]); 
+            template = template.replace('!DATAHERE!', results[5]); 
+
+            //Full state name 
+            template = template.replace('!STATE!', results[6]); 
+            template = template.replace('!STATENAME!', results[6]); 
 
         
             let response = template;
             WriteHtml(res, response);
 
 
-            //lookup state_abbreviation in state table and find corresponding full state name
+            
 
         });
 
