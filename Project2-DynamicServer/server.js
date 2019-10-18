@@ -250,7 +250,7 @@ function GetEnergyArray(energy)
 				}
             });
 
-            console.log("ENERGY OBJECT", energyObject);
+            //console.log("ENERGY OBJECT", energyObject);
             res(energyObject);
         });
     })
@@ -331,28 +331,42 @@ function GetConsumptionForEnergyTable(energysource) {
             if(err){
                 rej(err);
             }
+			console.log(rows);
             let i=0;
 			let prevYear = -1;
+			table+= "<tr>";
 			while (i<rows.length){
 				if (rows[i].year==prevYear){
+					//for (let j=0, j<51, j++){
+						table += "<td>" +rows[i][energysource] + "</td>";
+					//}
 					//add cell to current row
 					//just tds
 					//rows[i][energysource]
 				}else{
+					//console.log(rows[i][rows.year]);
+					table += "<tr>" + "<td>" + rows[i][rows.year] + "</td>" + "<td>" + rows[i][energysource] + "</td>" + "</tr>";
 					//add next row
 					//trs and tds
 					//same
 				
 				}
+				prevYear += 1;
+				i++;
 			}
-		});
+		
+		//console.log(table);
         res(table);
     });
-};
+});
+}
 
 
 //function for getting full state name from state abbreviation
 function GetFullStateName(stateabbrev) {
+	if(stateabbrev == 'undefined'){
+	
+	}
     return new Promise( function(res,rej) {
         let sql = 'SELECT state_name FROM States WHERE state_abbreviation = ?';
         var fullName = "";
@@ -365,7 +379,10 @@ function GetFullStateName(stateabbrev) {
             var fullName = "";
             var fullName = row.state_name;
             res(fullName)
-
+			
+			if (row.state_name == 'undefined'){
+				return null;
+			}
         });
     });
 }
@@ -430,6 +447,7 @@ app.get('/year/:selected_year', (req, res) => {
 
 // GET request handler for '/state/*'
 app.get('/state/:selected_state', (req, res) => {
+	
     ReadFile(path.join(template_dir, 'state.html')).then((template) => {
 
         var state = req.params.selected_state;
@@ -443,6 +461,13 @@ app.get('/state/:selected_state', (req, res) => {
         Promise.all([StateCoalTestSql(state), StateNaturalTestSql(state), StateNuclearTestSql(state), StatePetroleumTestSql(state),StateRenewableTestSql(state), GetConsumptionForStateTable(state), GetFullStateName(state)]).then((results) => {
             //console.log(results);
             //404 ERROR // check if results is empty array, then send a customized response 
+			//console.log(results);
+			
+		if(results = []){
+			res.writeHead(404, {'Content-Type': 'text/plain'});
+			res.write('Error: No data for state '+ req.params.selected_state);
+			res.end();
+		}
             
             //populate state variables 
             template = template.replace('!COALCOUNT!', results[0]);
@@ -458,7 +483,7 @@ app.get('/state/:selected_state', (req, res) => {
             template = template.replace('!STATE!', results[6]); 
             template = template.replace('!STATENAME!', results[6]); 
 
-        
+			console.log(results[6]);
             let response = template;
             WriteHtml(res, response);
 
@@ -475,11 +500,16 @@ app.get('/state/:selected_state', (req, res) => {
 // GET request handler for '/energy-type/*'
 app.get('/energy-type/:selected_energy_type', (req, res) => {
     ReadFile(path.join(template_dir, 'energy.html')).then((template) => {
-        Promise.all([/*GetConsumptionForEnergyTable(req.params.selected_energy_type),*/GetEnergyArray(req.params.selected_energy_type)]).then((results) => {
- 
+        Promise.all([GetConsumptionForEnergyTable(req.params.selected_energy_type),GetEnergyArray(req.params.selected_energy_type)]).then((results) => {
+  		if(results = []){
+			res.writeHead(404, {'Content-Type': 'text/plain'});
+			res.write('Error: No data for energy type '+ req.params.selected_energy_type);
+			res.end();
+		}
             template = template.toString();
             template = template.replace('!ENERGY!', req.params.selected_energy_type);
-            template = template.replace('!ENERGYARRAY!', JSON.stringify(results[0]));
+            template = template.replace('!ENERGYARRAY!', JSON.stringify(results[1]));
+			template = template.replace('!ENERGYTABLEHERE!', JSON.stringify(results[0]));
             //variables
 
             //images
