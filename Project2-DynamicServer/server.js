@@ -134,34 +134,36 @@ function StateCoalTestSql(state) {
 }   
 
 //--------------------ENERGY VARIABLES -----------------------------------------//
-// Select * FROM Consumption order by year
-/*function GetEnergyArray(energy)
+function GetEnergyArray(energy)
 {
     return new Promise( function(res,rej) {
         let sql = 'SELECT * FROM Consumption ORDER BY year';
-        var energyObject = {};
+        var energyObject = {AK:[],AL:[]};
         energyArray = [];
         db.all(sql, (err, rows) => {
+			
             if(err){
                 rej(err);
             }
 
             rows.forEach((row) => {
-                console.log(row);
+                //console.log(row);
                 var key = row.state_abbreviation;
                 key.toString();
-                energyObject.push({key: energyArray});
-                //energyObject[key].push(row.energy);
+                //energyObject.push({key: energyArray});
+                if (key=="AK" || key == "AL"){
+					energyObject[key].push(row[energy]);
+				}
             });
 
-            console.log("ENERGY OBJECT" + energyObject);
+            console.log("ENERGY OBJECT", energyObject);
             res(energyObject);
         });
     })
 
-}*/
+}
 //build object 
-// Object["row_abbrevation"].push(row.coal)
+// Object[state_abbreviation].push(row.energy (req.res.selected_energy_type))
 //------------------Dynamic Tables (Year State and Energy)----------------
 
 function GetConsumptionForIndexTable(year) {
@@ -228,18 +230,28 @@ function GetConsumptionForStateTable(state) {
 //function for table on energy page
 function GetConsumptionForEnergyTable(energysource) {
     return new Promise( function(res,rej) {
-        let sql = 'SELECT ? FROM consumption WHERE state_abbreviation = ?';
+        let sql = 'SELECT * FROM consumption ORDER BY year';
         var table = "";
         var total = 0;
-        db.all(sql, [energysource], (err, rows) => {
+        db.all(sql, (err, rows) => {
             if(err){
                 rej(err);
             }
-            rows.forEach((row) => {
-                //console.log(row);
-                total = total + row.coal + row.natural_gas + row.nuclear + row.petroleum + row.renewable;
-                table += "<tr> "+ "<td>"+ row.year + "</td>" + "<td>"+ row.coal + "</td>" + "<td>"+ row.natural_gas + "</td>" + "<td>" + row.nuclear + "</td>" + "<td>" + row.petroleum+ "</td>"+ "<td>" + row.renewable + "</td>" + "<td>"+ total + "</td>" + "</tr>";  
-            });
+            let i=0;
+			let prevYear = -1;
+			while (i<rows.length){
+				if (rows[i].year==prevYear){
+					//add cell to current row
+					//just tds
+					//rows[i][energysource]
+				}else{
+					//add next row
+					//trs and tds
+					//same
+				
+				}
+			}
+			});
             res(table);
         });
     });
@@ -329,9 +341,7 @@ app.get('/state/:selected_state', (req, res) => {
         var state = req.params.selected_state;
 
             template = template.toString();
-            //GetFullStateName(req.params.selected_state).then((fullName) =>{   
-                //template = template.replace('!STATE!');
-            //});
+
             //populate image 
             template = template.replace('noimage', req.params.selected_state);
             template = template.replace('No Image', req.params.selected_state);
@@ -370,11 +380,11 @@ app.get('/state/:selected_state', (req, res) => {
 // GET request handler for '/energy-type/*'
 app.get('/energy-type/:selected_energy_type', (req, res) => {
     ReadFile(path.join(template_dir, 'energy.html')).then((template) => {
-        Promise.all([GetConsumptionForEnergyTable(req.params.selected_energy_type)/*GetEnergyArray(req.params.selected_energy_type)*/]).then((results) => {
+        Promise.all([/*GetConsumptionForEnergyTable(req.params.selected_energy_type),*/GetEnergyArray(req.params.selected_energy_type)]).then((results) => {
  
             template = template.toString();
             template = template.replace('!ENERGY!', req.params.selected_energy_type);
-            template = template.replace('!ENERGYARRAY!', results[1]);
+            template = template.replace('!ENERGYARRAY!', JSON.stringify(results[0]));
             //variables
 
             //images
