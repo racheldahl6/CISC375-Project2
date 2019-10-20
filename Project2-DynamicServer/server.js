@@ -233,7 +233,9 @@ function GetEnergyArray(energy)
     return new Promise( function(res,rej) {
         let sql = 'SELECT * FROM Consumption ORDER BY year';
         var energyObject = {AK:[],AL:[],AR:[],AZ:[],CA:[],CO:[],CT:[],DC:[],DE:[],FL:[],
-		     GA:[],HI:[],IA:[],ID:[],IL:[],IN:[],KS:[],KY:[],LA:[]};
+		     GA:[],HI:[],IA:[],ID:[],IL:[],IN:[],KS:[],KY:[],LA:[],MA:[],MD:[],ME:[],MI:[],MN:[],
+			 MO:[],MS:[],MT:[],NC:[],ND:[],NE:[],NH:[],NJ:[],NM:[],NV:[],NY:[],OH:[],OK:[],OR:[],
+			 PA:[],RI:[],SC:[],SD:[],TN:[],TX:[],UT:[],VA:[],VT:[],WA:[],WI:[],WV:[],WY:[]};
         energyArray = [];
         db.all(sql, (err, rows) => {
 			
@@ -246,9 +248,9 @@ function GetEnergyArray(energy)
                 var key = row.state_abbreviation;
                 key.toString();
                 //energyObject.push({key: energyArray});
-                if (key=="AK" || key == "AL"){
+                //if (key=="AK" || key == "AL"){
 					energyObject[key].push(row[energy]);
-				}
+				//}
             });
 
             //console.log("ENERGY OBJECT", energyObject);
@@ -333,28 +335,37 @@ function GetConsumptionForEnergyTable(energysource) {
                 rej(err);
             }
 			//console.log(rows);
+			
             let i=0;
-			let prevYear = -1;
+			let prevYear = 1960;
 			table+= "<tr>";
+			console.log('Rows.length: '+ rows.length);
 			while (i<rows.length){
 				if (rows[i].year==prevYear){
 					//for (let j=0, j<51, j++){
-						table += "<td>" +rows[i][energysource] + "</td>";
+					table += "<td>" +rows[i][energysource] + "</td>";
+					//console.log('Printing in if');
+					//console.log('Year is: '+rows[i].year);
+					//console.log('Prev year is: '+prevYear);
 					//}
 					//add cell to current row
 					//just tds
 					//rows[i][energysource]
 				}else{
 					//console.log(rows[i][rows.year]);
-					table += "<tr>" + "<td>" + rows[i][rows.year] + "</td>" + "<td>" + rows[i][energysource] + "</td>" + "</tr>";
+					table += "</tr>" +"<tr>" + "<td>" + rows[i].year + /*"</td>" + "<td>" + rows[i][energysource] + */ "</td>";
+					//console.log('Printing in else');
+					//console.log('Year is: '+rows[i].year);
+					//console.log('Prev year is: '+prevYear);
 					//add next row
 					//trs and tds
 					//same
-				
+					prevYear += 1;
 				}
-				prevYear += 1;
+				//prevYear += 1;
 				i++;
 			}
+			
 		
 		//console.log(table);
         res(table);
@@ -484,7 +495,7 @@ app.get('/state/:selected_state', (req, res) => {
             template = template.replace('!STATE!', results[6]); 
             template = template.replace('!STATENAME!', results[6]); 
 
-			console.log(results[6]);
+			//console.log(results[6]);
             let response = template;
             WriteHtml(res, response);
 
@@ -502,7 +513,7 @@ app.get('/state/:selected_state', (req, res) => {
 app.get('/energy-type/:selected_energy_type', (req, res) => {
     ReadFile(path.join(template_dir, 'energy.html')).then((template) => {
         Promise.all([GetConsumptionForEnergyTable(req.params.selected_energy_type),GetEnergyArray(req.params.selected_energy_type)]).then((results) => {
-			console.log('results: ' + results);
+			//console.log('results: ' + results);
   		if(results == []){
 			res.writeHead(404, {'Content-Type': 'text/plain'});
 			res.write('Error: No data for energy type '+ req.params.selected_energy_type);
