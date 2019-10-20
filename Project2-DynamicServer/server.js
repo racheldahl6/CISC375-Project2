@@ -232,7 +232,8 @@ function GetEnergyArray(energy)
 {
     return new Promise( function(res,rej) {
         let sql = 'SELECT * FROM Consumption ORDER BY year';
-        var energyObject = {AK:[],AL:[]};
+        var energyObject = {AK:[],AL:[],AR:[],AZ:[],CA:[],CO:[],CT:[],DC:[],DE:[],FL:[],
+		     GA:[],HI:[],IA:[],ID:[],IL:[],IN:[],KS:[],KY:[],LA:[]};
         energyArray = [];
         db.all(sql, (err, rows) => {
 			
@@ -331,7 +332,7 @@ function GetConsumptionForEnergyTable(energysource) {
             if(err){
                 rej(err);
             }
-			console.log(rows);
+			//console.log(rows);
             let i=0;
 			let prevYear = -1;
 			table+= "<tr>";
@@ -463,7 +464,7 @@ app.get('/state/:selected_state', (req, res) => {
             //404 ERROR // check if results is empty array, then send a customized response 
 			//console.log(results);
 			
-		if(results = []){
+		if(results == []){
 			res.writeHead(404, {'Content-Type': 'text/plain'});
 			res.write('Error: No data for state '+ req.params.selected_state);
 			res.end();
@@ -501,7 +502,8 @@ app.get('/state/:selected_state', (req, res) => {
 app.get('/energy-type/:selected_energy_type', (req, res) => {
     ReadFile(path.join(template_dir, 'energy.html')).then((template) => {
         Promise.all([GetConsumptionForEnergyTable(req.params.selected_energy_type),GetEnergyArray(req.params.selected_energy_type)]).then((results) => {
-  		if(results = []){
+			console.log('results: ' + results);
+  		if(results == []){
 			res.writeHead(404, {'Content-Type': 'text/plain'});
 			res.write('Error: No data for energy type '+ req.params.selected_energy_type);
 			res.end();
