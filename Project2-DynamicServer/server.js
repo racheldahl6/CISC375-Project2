@@ -245,26 +245,6 @@ function GetEnergyArray(energy)
 
 }
 
-//-----------------------ENERGY PREV AND NEXT ------------------------------
-
-/*function getEnergyPrev(energy) {
-     return new Promise( function(res,rej) {
-        href = ['http://localhost:8000/energy-type/coal', 'http://localhost:8000/energy-type/natural_gas', 'http://localhost:8000/energy-type/nuclear', 'http://localhost:8000/energy-type/petroleum', 'http://localhost:8000/energy-type/renewable'];
-        path = "";
-        for (var i= 0; i<href.length; i++)
-        {
-            if (energy === coal){
-
-                path = href[4];
-            }
-            /*else if (energy === natural_gas){
-                res(href[0]);
-            }
-        }
-        res(path);
-     });
-
-}*/
 //------------------Dynamic Tables (Year State and Energy)----------------
 
 function GetConsumptionForIndexTable(year) {
@@ -521,7 +501,7 @@ app.get('/state/:selected_state', (req, res) => {
 app.get('/energy-type/:selected_energy_type', (req, res) => {
     ReadFile(path.join(template_dir, 'energy.html')).then((template) => {
         var energy = req.params.selected_energy_type;
-        Promise.all([GetConsumptionForEnergyTable(energy),GetEnergyArray(energy),/*getEnergyPrev(energy)*/]).then((results) => {
+        Promise.all([GetConsumptionForEnergyTable(energy),GetEnergyArray(energy)]).then((results) => {
 			console.log('results: ' + JSON.stringify(results[0]));
 			if (results[0].includes('undefined')){
 
