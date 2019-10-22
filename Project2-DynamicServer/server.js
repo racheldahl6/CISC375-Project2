@@ -318,7 +318,7 @@ function GetConsumptionForEnergyTable(energysource) {
 			
             let i=0;
 			let prevYear = 1960;
-			//console.log("Rows.length: "+rows.length);
+			console.log("Rows.length: "+rows.length);
 			var rowTotal=0;
 			while (i<rows.length){
 				if (rows[i].year==prevYear){
@@ -328,8 +328,8 @@ function GetConsumptionForEnergyTable(energysource) {
 
 					table += "<td>" +rows[i][energysource] + "</td>";
 					rowTotal+=rows[i][energysource];
-					//console.log("if: "+rows[i].year);
-					//console.log("if i: "+i);
+					console.log("if: "+rows[i].year);
+					console.log("if i: "+i);
 					if(i==2957){
 						table+="<td>"+ rowTotal +"</td>" + "</tr>";
 					}
@@ -339,8 +339,8 @@ function GetConsumptionForEnergyTable(energysource) {
 					table += "<td>"+ rowTotal +"</td>" + "</tr>";
 					rowTotal=0;
 					table+="<tr>" + "<td>" + rows[i].year + "</td>" + "<td>" + rows[i][energysource] + "</td>";
-					//console.log("else: "+rows[i].year);
-					//console.log("else i: "+i);
+					console.log("else: "+rows[i].year);
+					console.log("else i: "+i);
 					//rowTotal += rows[i][energysource];
 					rowTotal+=rows[i][energysource];
 					prevYear += 1;
@@ -455,13 +455,13 @@ app.get('/state/:selected_state', (req, res) => {
             //console.log(results);
             //404 ERROR // check if results is empty array, then send a customized response 
 			//console.log(results);
-	/*		
+			
 		if(results == []){
 			res.writeHead(404, {'Content-Type': 'text/plain'});
 			res.write('Error: No data for state '+ req.params.selected_state);
 			res.end();
 		}
-    */        
+            
             //populate state variables 
             template = template.replace('!COALCOUNT!', results[0]);
             template = template.replace('!NATURALCOUNT!', results[1]);  
@@ -494,15 +494,12 @@ app.get('/state/:selected_state', (req, res) => {
 app.get('/energy-type/:selected_energy_type', (req, res) => {
     ReadFile(path.join(template_dir, 'energy.html')).then((template) => {
         Promise.all([GetConsumptionForEnergyTable(req.params.selected_energy_type),GetEnergyArray(req.params.selected_energy_type)]).then((results) => {
-
-			console.log('Results 1: '+JSON.stringify(results[1]));
-			console.log('Results 1 AK: '+JSON.stringify(results[1]['AK'][0]));
-			if(results[1]['AK'][0]==null){
-				res.writeHead(404, {'Content-Type': 'text/plain'});
-				res.write('Error: No data for energy type '+ req.params.selected_energy_type);
-				res.end();
-			}
-			
+			//console.log('results: ' + results);
+  		if(results == []){
+			res.writeHead(404, {'Content-Type': 'text/plain'});
+			res.write('Error: No data for energy type '+ req.params.selected_energy_type);
+			res.end();
+		}
             template = template.toString();
             template = template.replace('!ENERGY!', req.params.selected_energy_type);
             template = template.replace('!ENERGYARRAY!', JSON.stringify(results[1]));
@@ -515,9 +512,7 @@ app.get('/energy-type/:selected_energy_type', (req, res) => {
 
             let response = template;
             WriteHtml(res, response);
-        }).catch((error)=>{
-
-		});
+        });
         
     }).catch((err) => {
         Write404Error(res);
