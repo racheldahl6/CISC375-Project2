@@ -1,10 +1,10 @@
 // Built-in Node.js modules
-var fs = require('fs')
-var path = require('path')
+var fs = require('fs');
+var path = require('path');
 
 // NPM modules
-var express = require('express')
-var sqlite3 = require('sqlite3')
+var express = require('express');
+var sqlite3 = require('sqlite3');
 
 
 var public_dir = path.join(__dirname, 'public');
@@ -334,40 +334,32 @@ function GetConsumptionForEnergyTable(energysource) {
             if(err){
                 rej(err);
             }
-			//console.log(rows);
 			
             let i=0;
 			let prevYear = 1960;
-			table+= "<tr>";
-			console.log('Rows.length: '+ rows.length);
+			
+			var rowTotal=0;
 			while (i<rows.length){
 				if (rows[i].year==prevYear){
-					//for (let j=0, j<51, j++){
+					if(i==0){
+						table+="<tr>"+"<td>" + rows[i].year+"</td>";
+					}
+
 					table += "<td>" +rows[i][energysource] + "</td>";
-					//console.log('Printing in if');
-					//console.log('Year is: '+rows[i].year);
-					//console.log('Prev year is: '+prevYear);
-					//}
-					//add cell to current row
-					//just tds
-					//rows[i][energysource]
+					rowTotal+=rows[i][energysource];
+
 				}else{
-					//console.log(rows[i][rows.year]);
-					table += "</tr>" +"<tr>" + "<td>" + rows[i].year + /*"</td>" + "<td>" + rows[i][energysource] + */ "</td>";
-					//console.log('Printing in else');
-					//console.log('Year is: '+rows[i].year);
-					//console.log('Prev year is: '+prevYear);
-					//add next row
-					//trs and tds
-					//same
+					//rowTotal += rows[i][energysource];
+					table += "<td>"+ rowTotal +"</td>" + "</tr>";
+					rowTotal=0;
+					table+="<tr>" + "<td>" + rows[i].year + "</td>" + "<td>" + rows[i][energysource] + "</td>";
+					//rowTotal += rows[i][energysource];
+					rowTotal+=rows[i][energysource];
 					prevYear += 1;
 				}
-				//prevYear += 1;
+				//rowTotal=0;
 				i++;
 			}
-			
-		
-		//console.log(table);
         res(table);
     });
 });
