@@ -125,8 +125,6 @@ function StateCoalTestSql(state) {
                 coalSum.push(row.coal);
             });
 
-
-            //console.log(coalSum + " STATE COAL SUM");
             res(JSON.stringify(coalSum));
         });
     
@@ -148,8 +146,6 @@ function StateNaturalTestSql(state) {
                 naturalSum.push(row.natural_gas);
             });
 
-
-            //console.log(coalSum + " STATE COAL SUM");
             res(JSON.stringify(naturalSum));
         });
     
@@ -172,8 +168,6 @@ function StateNuclearTestSql(state) {
                 nuclearSum.push(row.nuclear);
             });
 
-
-            //console.log(coalSum + " STATE COAL SUM");
             res(JSON.stringify(nuclearSum));
         });
     
@@ -196,8 +190,6 @@ function StatePetroleumTestSql(state) {
                 petroleumSum.push(row.petroleum);
             });
 
-
-            //console.log(coalSum + " STATE COAL SUM");
             res(JSON.stringify(petroleumSum));
         });
     
@@ -220,8 +212,6 @@ function StateRenewableTestSql(state) {
                 renewableSum.push(row.renewable);
             });
 
-
-            //console.log(coalSum + " STATE COAL SUM");
             res(JSON.stringify(renewableSum));
         });
     
@@ -244,16 +234,11 @@ function GetEnergyArray(energy)
             }
 
             rows.forEach((row) => {
-                //console.log(row);
                 var key = row.state_abbreviation;
                 key.toString();
-                //energyObject.push({key: energyArray});
-                //if (key=="AK" || key == "AL"){
-					energyObject[key].push(row[energy]);
-				//}
+				energyObject[key].push(row[energy]);
             });
 
-            //console.log("ENERGY OBJECT", energyObject);
             res(energyObject);
         });
     })
@@ -272,8 +257,6 @@ function GetConsumptionForIndexTable(year) {
                 rej(err);
             }
             rows.forEach((row) => {
-                //console.log(row);
-                //total = total + row.coal + row.natural_gas + row.nuclear + row.petroleum + row.renewable;
                 table += "<tr> "+ "<td>"+ row.state_abbreviation + "</td>" + "<td>"+ row.coal + "</td>" + "<td>"+ row.natural_gas + "</td>" + "<td>" + row.nuclear + "</td>" + "<td>" + row.petroleum+ "</td>"+ "<td>" + row.renewable + "</td>" +"</tr>";
             });
             res(table);
@@ -292,7 +275,6 @@ function GetConsumptionForYearTable(year) {
                 rej(err);
             }
             rows.forEach((row) => {
-                //console.log(row);
                 total = total + row.coal + row.natural_gas + row.nuclear + row.petroleum + row.renewable;
                 table += "<tr> "+ "<td>"+ row.state_abbreviation + "</td>" + "<td>"+ row.coal + "</td>" + "<td>"+ row.natural_gas + "</td>" + "<td>" + row.nuclear + "</td>" + "<td>" + row.petroleum+ "</td>"+ "<td>" + row.renewable + "</td>" + "<td>"+ total + "</td>" + "</tr>";  
             });
@@ -322,7 +304,6 @@ function GetConsumptionForStateTable(state) {
         });
     });
 }
-//app.use(express.static(public_dir));
 
 //function for table on energy page
 function GetConsumptionForEnergyTable(energysource) {
@@ -337,7 +318,7 @@ function GetConsumptionForEnergyTable(energysource) {
 			
             let i=0;
 			let prevYear = 1960;
-			
+			console.log("Rows.length: "+rows.length);
 			var rowTotal=0;
 			while (i<rows.length){
 				if (rows[i].year==prevYear){
@@ -347,15 +328,23 @@ function GetConsumptionForEnergyTable(energysource) {
 
 					table += "<td>" +rows[i][energysource] + "</td>";
 					rowTotal+=rows[i][energysource];
+					console.log("if: "+rows[i].year);
+					console.log("if i: "+i);
+					if(i==2957){
+						table+="<td>"+ rowTotal +"</td>" + "</tr>";
+					}
 
 				}else{
 					//rowTotal += rows[i][energysource];
 					table += "<td>"+ rowTotal +"</td>" + "</tr>";
 					rowTotal=0;
 					table+="<tr>" + "<td>" + rows[i].year + "</td>" + "<td>" + rows[i][energysource] + "</td>";
+					console.log("else: "+rows[i].year);
+					console.log("else i: "+i);
 					//rowTotal += rows[i][energysource];
 					rowTotal+=rows[i][energysource];
 					prevYear += 1;
+
 				}
 				//rowTotal=0;
 				i++;
