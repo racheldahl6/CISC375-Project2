@@ -245,6 +245,56 @@ function GetEnergyArray(energy)
 
 }
 
+//-----------------Prev and next function for STATE -------------------------------
+
+function getPrevState(state){
+    return new Promise( function(res,rej) {
+        var States = ["AK","AL","AR","AZ","CA","CO","CT","DC","DE","FL","GA","HI","IA","ID", "IL","IN","KS","KY","LA","MA","MD","ME","MI","MN","MO","MS","MT","NC","ND","NE","NH","NJ","NM","NV","NY", "OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VA","VT","WA","WI","WV","WY"];
+        var prevState = "";
+        var path = "http://localhost:8000/state/";
+
+        for (i =0; i < States.length; i++){
+            if (States[i] === state){
+               
+                index = (i-1)%51;
+                if (States[i] === "AK"){
+                    index = 50;
+                }
+                prevState = prevState + States[index];
+            }
+        }
+     
+        prevState = path+prevState;
+        res(prevState);
+    });
+}
+
+function getNextState(state){
+    return new Promise( function(res,rej) {
+        var States = ["AK","AL","AR","AZ","CA","CO","CT","DC","DE","FL","GA","HI","IA","ID", "IL","IN","KS","KY","LA","MA","MD","ME","MI","MN","MO","MS","MT","NC","ND","NE","NH","NJ","NM","NV","NY", "OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VA","VT","WA","WI","WV","WY"];
+        var nextState = "";
+        var path = "http://localhost:8000/state/";
+
+        for (i =0; i < States.length; i++){
+            if (States[i] === state){
+               
+                index = (i+1)%51; //not sure why mod doesnt work but for if is fine i guess
+                //console.log("index" + index);
+                if (States[i] === "WY"){
+                    index = 0;
+                }
+                nextState = nextState + States[index];
+               // console.log("State" + nextState);
+            }
+        }
+     
+        nextState = path+nextState;
+        //console.log("path" + nextState);
+        res(nextState);
+    });
+}
+
+
 //------------------Dynamic Tables (Year State and Energy)----------------
 
 function GetConsumptionForIndexTable(year) {
@@ -449,7 +499,7 @@ app.get('/state/:selected_state', (req, res) => {
         var state = req.params.selected_state;
         var states = [];
         var flag = false;
-        States = [ 'AL', 'AK', 'AS', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'DC', 'FM', 'FL', 'GA', 'GU', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MH', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'MP', 'OH', 'OK', 'OR', 'PW', 'PA', 'PR', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VI', 'VA', 'WA', 'WV', 'WI', 'WY' ];
+        var States = ["AK","AL","AR","AZ","CA","CO","CT","DC","DE","FL","GA","HI","IA","ID", "IL","IN","KS","KY","LA","MA","MD","ME","MI","MN","MO","MS","MT","NC","ND","NE","NH","NJ","NM","NV","NY", "OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VA","VT","WA","WI","WV","WY"];
         
         for (i = 0; i <States.length; i++){
             if(States[i] === state){
@@ -470,7 +520,7 @@ app.get('/state/:selected_state', (req, res) => {
         template = template.replace('noimage', req.params.selected_state);
         template = template.replace('No Image', req.params.selected_state);
 
-        Promise.all([StateCoalTestSql(state), StateNaturalTestSql(state), StateNuclearTestSql(state), StatePetroleumTestSql(state),StateRenewableTestSql(state), GetConsumptionForStateTable(state), GetFullStateName(state)]).then((results) => {
+        Promise.all([StateCoalTestSql(state), StateNaturalTestSql(state), StateNuclearTestSql(state), StatePetroleumTestSql(state),StateRenewableTestSql(state), GetConsumptionForStateTable(state), GetFullStateName(state), getPrevState(state), getNextState(state)]).then((results) => {
                 
             //populate state variables 
             template = template.replace('!COALCOUNT!', results[0]);
@@ -485,6 +535,10 @@ app.get('/state/:selected_state', (req, res) => {
             //Full state name 
             template = template.replace('!STATE!', results[6]); 
             template = template.replace('!STATENAME!', results[6]); 
+
+            //pev and next 
+            template = template.replace('!PREV!', results[7]);
+            template = template.replace('!NEXT!', results[8]);
 
             let response = template;
             WriteHtml(res, response);
@@ -502,7 +556,7 @@ app.get('/energy-type/:selected_energy_type', (req, res) => {
     ReadFile(path.join(template_dir, 'energy.html')).then((template) => {
         var energy = req.params.selected_energy_type;
         Promise.all([GetConsumptionForEnergyTable(energy),GetEnergyArray(energy)]).then((results) => {
-			console.log('results: ' + JSON.stringify(results[0]));
+			
 			if (results[0].includes('undefined')){
 
 				res.writeHead(404, {'Content-Type': 'text/plain'});
