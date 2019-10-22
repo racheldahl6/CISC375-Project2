@@ -294,6 +294,70 @@ function getNextState(state){
     });
 }
 
+//------------------Get prev and next for YEAR------------------------------------
+
+function getPrevYear(year){
+    return new Promise( function(res,rej) {
+        var Years = [];
+        var start = 1960
+        var prevYear = 0;
+        var index = 0;
+        var path = "http://localhost:8000/year/";
+        var yearPath = "";
+
+        //create a years array
+        for(j = 0; j<58; j++){
+            Years.push(start)
+            start = start +1;
+        }
+
+        for (i =0; i < Years.length; i++){
+            if (Years[i].toString() === year){      
+                index = (i-1)%58; //not sure why mod doesnt work but for if is fine i guess
+                if (Years[i].toString() === "1960"){
+                    index = 57;
+                }
+                prevYear = prevYear + Years[index];
+            }
+        }
+        yearPath = prevYear.toString();
+        yearPath = path+yearPath;
+        
+        res(yearPath);
+    });
+}
+
+function getNextYear(year){
+    return new Promise( function(res,rej) {
+        var Years = [];
+        var start = 1960
+        var nextYear = 0;
+        var index = 0;
+        var path = "http://localhost:8000/year/";
+        var yearPath = "";
+
+        //create a years array
+        for(j = 0; j<58; j++){
+            Years.push(start)
+            start = start +1;
+        }
+
+        for (i =0; i < Years.length; i++){
+            if (Years[i].toString() === year){      
+                index = (i+1)%58; //not sure why mod doesnt work but for if is fine i guess
+                if (Years[i].toString() === "2017"){
+                    index = 0;
+                }
+                nextYear = nextYear + Years[index];
+            }
+        }
+        yearPath = nextYear.toString();
+        yearPath = path+yearPath;
+        
+        res(yearPath);
+    });
+}
+
 
 //------------------Dynamic Tables (Year State and Energy)----------------
 
@@ -460,8 +524,9 @@ app.get('/', (req, res) => {
 // GET request handler for '/year/*'
 app.get('/year/:selected_year', (req, res) => {
     ReadFile(path.join(template_dir, 'year.html')).then((template) => {
+        var year = req.params.selected_year;
 
-        Promise.all([CoalTestSql(req.params.selected_year), NaturalGasTestSql(req.params.selected_year), NuclearTestSql(req.params.selected_year), PetroleumTestSql(req.params.selected_year), RenewableTestSql(req.params.selected_year), GetConsumptionForYearTable(req.params.selected_year)]).then((results) => {
+        Promise.all([CoalTestSql(year), NaturalGasTestSql(year), NuclearTestSql(year), PetroleumTestSql(year), RenewableTestSql(year), GetConsumptionForYearTable(year), getPrevYear(year), getNextYear(year)]).then((results) => {
 
         	if (results[5] == ''){
 
@@ -479,6 +544,10 @@ app.get('/year/:selected_year', (req, res) => {
             template = template.replace('!PETROLEUMCOUNT!', results[3]); 
             template = template.replace('!RENEWABLECOUNT!', results[4]); 
             template = template.replace('!DATAHERE!', results[5]); 
+
+            //prev and next 
+            template = template.replace('!PREV!', results[6]); 
+            template = template.replace('!NEXT!', results[7]); 
 
             let response = template;
             WriteHtml(res, response);
@@ -501,13 +570,14 @@ app.get('/state/:selected_state', (req, res) => {
         var flag = false;
         var States = ["AK","AL","AR","AZ","CA","CO","CT","DC","DE","FL","GA","HI","IA","ID", "IL","IN","KS","KY","LA","MA","MD","ME","MI","MN","MO","MS","MT","NC","ND","NE","NH","NJ","NM","NV","NY", "OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VA","VT","WA","WI","WV","WY"];
         
+        //Checks if user typed in a valid state
         for (i = 0; i <States.length; i++){
             if(States[i] === state){
                 flag = true; //it is a real state 
             }
         }
 
-        //If user does not input a real state 
+        //If user does not input a real state sends appropriate 404 message
         if (flag != true){
         
             res.writeHead(404, {'Content-Type': 'text/plain'});
