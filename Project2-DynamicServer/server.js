@@ -318,7 +318,7 @@ function GetConsumptionForEnergyTable(energysource) {
 			
             let i=0;
 			let prevYear = 1960;
-			console.log("Rows.length: "+rows.length);
+			//console.log("Rows.length: "+rows.length);
 			var rowTotal=0;
 			while (i<rows.length){
 				if (rows[i].year==prevYear){
@@ -328,8 +328,8 @@ function GetConsumptionForEnergyTable(energysource) {
 
 					table += "<td>" +rows[i][energysource] + "</td>";
 					rowTotal+=rows[i][energysource];
-					console.log("if: "+rows[i].year);
-					console.log("if i: "+i);
+					//console.log("if: "+rows[i].year);
+					//console.log("if i: "+i);
 					if(i==2957){
 						table+="<td>"+ rowTotal +"</td>" + "</tr>";
 					}
@@ -339,8 +339,8 @@ function GetConsumptionForEnergyTable(energysource) {
 					table += "<td>"+ rowTotal +"</td>" + "</tr>";
 					rowTotal=0;
 					table+="<tr>" + "<td>" + rows[i].year + "</td>" + "<td>" + rows[i][energysource] + "</td>";
-					console.log("else: "+rows[i].year);
-					console.log("else i: "+i);
+					//console.log("else: "+rows[i].year);
+					//console.log("else i: "+i);
 					//rowTotal += rows[i][energysource];
 					rowTotal+=rows[i][energysource];
 					prevYear += 1;
@@ -370,12 +370,14 @@ function GetFullStateName(stateabbrev) {
             }
             
             var fullName = "";
-            var fullName = row.state_name;
-            res(fullName)
-			
-			if (row.state_name == 'undefined'){
-				return null;
+            if (row.state_name == 'undefined'){
+				res(fullName);
 			}
+			else {
+            	var fullName = row.state_name;
+            	res(fullName)
+			}
+			
         });
     });
 }
@@ -416,7 +418,15 @@ app.get('/year/:selected_year', (req, res) => {
     ReadFile(path.join(template_dir, 'year.html')).then((template) => {
 
         Promise.all([CoalTestSql(req.params.selected_year), NaturalGasTestSql(req.params.selected_year), NuclearTestSql(req.params.selected_year), PetroleumTestSql(req.params.selected_year), RenewableTestSql(req.params.selected_year), GetConsumptionForYearTable(req.params.selected_year)]).then((results) => {
+        	console.log(results);
 
+        	if (results[5] == ''){
+
+        		res.writeHead(404, {'Content-Type': 'text/plain'});
+    			res.write('Error: No data for year ' + req.params.selected_year);
+   				res.end();
+        		
+        	}
             template = template.toString();
             
             template = template.replace('!YEAR!', req.params.selected_year);
@@ -452,7 +462,7 @@ app.get('/state/:selected_state', (req, res) => {
             template = template.replace('No Image', req.params.selected_state);
 
         Promise.all([StateCoalTestSql(state), StateNaturalTestSql(state), StateNuclearTestSql(state), StatePetroleumTestSql(state),StateRenewableTestSql(state), GetConsumptionForStateTable(state), GetFullStateName(state)]).then((results) => {
-            //console.log(results);
+            console.log(results);
             //404 ERROR // check if results is empty array, then send a customized response 
 			//console.log(results);
 			
@@ -494,12 +504,19 @@ app.get('/state/:selected_state', (req, res) => {
 app.get('/energy-type/:selected_energy_type', (req, res) => {
     ReadFile(path.join(template_dir, 'energy.html')).then((template) => {
         Promise.all([GetConsumptionForEnergyTable(req.params.selected_energy_type),GetEnergyArray(req.params.selected_energy_type)]).then((results) => {
-			//console.log('results: ' + results);
-  		if(results == []){
-			res.writeHead(404, {'Content-Type': 'text/plain'});
-			res.write('Error: No data for energy type '+ req.params.selected_energy_type);
-			res.end();
-		}
+			console.log('results: ' + JSON.stringify(results[0]));
+			if (results[0].includes('undefined')){
+
+				res.writeHead(404, {'Content-Type': 'text/plain'});
+				res.write('Error: No data for energy type '+ req.params.selected_energy_type);
+				res.end();
+			}
+
+	  		if(results == []){
+				res.writeHead(404, {'Content-Type': 'text/plain'});
+				res.write('Error: No data for energy type '+ req.params.selected_energy_type);
+				res.end();
+			}
             template = template.toString();
             template = template.replace('!ENERGY!', req.params.selected_energy_type);
             template = template.replace('!ENERGYARRAY!', JSON.stringify(results[1]));
@@ -512,6 +529,8 @@ app.get('/energy-type/:selected_energy_type', (req, res) => {
 
             let response = template;
             WriteHtml(res, response);
+        }).catch((err) => {
+        	//console.log(err);
         });
         
     }).catch((err) => {
