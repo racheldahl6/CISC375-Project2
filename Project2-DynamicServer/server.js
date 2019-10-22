@@ -244,8 +244,27 @@ function GetEnergyArray(energy)
     })
 
 }
-//build object 
-// Object[state_abbreviation].push(row.energy (req.res.selected_energy_type))
+
+//-----------------------ENERGY PREV AND NEXT ------------------------------
+
+/*function getEnergyPrev(energy) {
+     return new Promise( function(res,rej) {
+        href = ['http://localhost:8000/energy-type/coal', 'http://localhost:8000/energy-type/natural_gas', 'http://localhost:8000/energy-type/nuclear', 'http://localhost:8000/energy-type/petroleum', 'http://localhost:8000/energy-type/renewable'];
+        path = "";
+        for (var i= 0; i<href.length; i++)
+        {
+            if (energy === coal){
+
+                path = href[4];
+            }
+            /*else if (energy === natural_gas){
+                res(href[0]);
+            }
+        }
+        res(path);
+     });
+
+}*/
 //------------------Dynamic Tables (Year State and Energy)----------------
 
 function GetConsumptionForIndexTable(year) {
@@ -413,7 +432,6 @@ app.get('/year/:selected_year', (req, res) => {
     ReadFile(path.join(template_dir, 'year.html')).then((template) => {
 
         Promise.all([CoalTestSql(req.params.selected_year), NaturalGasTestSql(req.params.selected_year), NuclearTestSql(req.params.selected_year), PetroleumTestSql(req.params.selected_year), RenewableTestSql(req.params.selected_year), GetConsumptionForYearTable(req.params.selected_year)]).then((results) => {
-        	console.log(results);
 
         	if (results[5] == ''){
 
@@ -502,7 +520,8 @@ app.get('/state/:selected_state', (req, res) => {
 // GET request handler for '/energy-type/*'
 app.get('/energy-type/:selected_energy_type', (req, res) => {
     ReadFile(path.join(template_dir, 'energy.html')).then((template) => {
-        Promise.all([GetConsumptionForEnergyTable(req.params.selected_energy_type),GetEnergyArray(req.params.selected_energy_type)]).then((results) => {
+        var energy = req.params.selected_energy_type;
+        Promise.all([GetConsumptionForEnergyTable(energy),GetEnergyArray(energy),/*getEnergyPrev(energy)*/]).then((results) => {
 			console.log('results: ' + JSON.stringify(results[0]));
 			if (results[0].includes('undefined')){
 
@@ -511,16 +530,36 @@ app.get('/energy-type/:selected_energy_type', (req, res) => {
 				res.end();
 			}
 
-	  		if(results == []){
-				res.writeHead(404, {'Content-Type': 'text/plain'});
-				res.write('Error: No data for energy type '+ req.params.selected_energy_type);
-				res.end();
-			}
             template = template.toString();
             template = template.replace('!ENERGY!', req.params.selected_energy_type);
             template = template.replace('!ENERGYARRAY!', JSON.stringify(results[1]));
 			template = template.replace('!ENERGYTABLEHERE!', JSON.stringify(results[0]));
-            //variables
+            //console.log(template);
+
+            //prev and next functionality
+       
+            if(energy === 'coal'){
+              template = template.replace('!PREV!', "http://localhost:8000/energy-type/renewable"); 
+              template = template.replace('!NEXT!', "http://localhost:8000/energy-type/natural_gas");  
+            }
+            else if(energy === 'natural_gas'){
+              template = template.replace('!PREV!', "http://localhost:8000/energy-type/coal"); 
+              template = template.replace('!NEXT!', "http://localhost:8000/energy-type/nuclear");  
+            }
+            else if(energy === 'nuclear'){
+              template = template.replace('!PREV!', "http://localhost:8000/energy-type/natural_gas"); 
+              template = template.replace('!NEXT!', "http://localhost:8000/energy-type/petroleum");  
+            }
+            else if(energy === 'petroleum'){
+              template = template.replace('!PREV!', "http://localhost:8000/energy-type/nuclear"); 
+              template = template.replace('!NEXT!', "http://localhost:8000/energy-type/renewable");  
+            }
+            else{
+              template = template.replace('!PREV!', "http://localhost:8000/energy-type/petroleum"); 
+              template = template.replace('!NEXT!', "http://localhost:8000/energy-type/coal");  
+            }
+            
+
 
             //images
             template = template.replace('noimage', req.params.selected_energy_type);
