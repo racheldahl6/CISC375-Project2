@@ -369,14 +369,9 @@ function GetFullStateName(stateabbrev) {
                 rej(err);
             }
             
-            var fullName = "";
-            if (row.state_name == 'undefined'){
-				res(fullName);
-			}
-			else {
-            	var fullName = row.state_name;
-            	res(fullName)
-			}
+            var fullName = row.state_name;
+            res(fullName)
+			
 			
         });
     });
@@ -454,24 +449,31 @@ app.get('/state/:selected_state', (req, res) => {
     ReadFile(path.join(template_dir, 'state.html')).then((template) => {
 
         var state = req.params.selected_state;
+        var states = [];
+        var flag = false;
+        States = [ 'AL', 'AK', 'AS', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'DC', 'FM', 'FL', 'GA', 'GU', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MH', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'MP', 'OH', 'OK', 'OR', 'PW', 'PA', 'PR', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VI', 'VA', 'WA', 'WV', 'WI', 'WY' ];
+        
+        for (i = 0; i <States.length; i++){
+            if(States[i] === state){
+                flag = true; //it is a real state 
+            }
+        }
 
-            template = template.toString();
+        //If user does not input a real state 
+        if (flag != true){
+        
+            res.writeHead(404, {'Content-Type': 'text/plain'});
+            res.write('Error: No data for state '+ state);
+            res.end();
+        }
+        template = template.toString();
 
-            //populate image 
-            template = template.replace('noimage', req.params.selected_state);
-            template = template.replace('No Image', req.params.selected_state);
+        //populate image 
+        template = template.replace('noimage', req.params.selected_state);
+        template = template.replace('No Image', req.params.selected_state);
 
         Promise.all([StateCoalTestSql(state), StateNaturalTestSql(state), StateNuclearTestSql(state), StatePetroleumTestSql(state),StateRenewableTestSql(state), GetConsumptionForStateTable(state), GetFullStateName(state)]).then((results) => {
-            console.log(results);
-            //404 ERROR // check if results is empty array, then send a customized response 
-			//console.log(results);
-			
-		if(results == []){
-			res.writeHead(404, {'Content-Type': 'text/plain'});
-			res.write('Error: No data for state '+ req.params.selected_state);
-			res.end();
-		}
-            
+                
             //populate state variables 
             template = template.replace('!COALCOUNT!', results[0]);
             template = template.replace('!NATURALCOUNT!', results[1]);  
@@ -486,13 +488,10 @@ app.get('/state/:selected_state', (req, res) => {
             template = template.replace('!STATE!', results[6]); 
             template = template.replace('!STATENAME!', results[6]); 
 
-			//console.log(results[6]);
             let response = template;
             WriteHtml(res, response);
 
-
-            
-
+        }).catch((err) => {
         });
 
     }).catch((err) => {
@@ -530,7 +529,7 @@ app.get('/energy-type/:selected_energy_type', (req, res) => {
             let response = template;
             WriteHtml(res, response);
         }).catch((err) => {
-        	//console.log(err);
+       
         });
         
     }).catch((err) => {
