@@ -1,3 +1,4 @@
+
 // Built-in Node.js modules
 var fs = require('fs');
 var path = require('path');
@@ -245,6 +246,120 @@ function GetEnergyArray(energy)
 
 }
 
+//-----------------Prev and next function for STATE -------------------------------
+
+function getPrevState(state){
+    return new Promise( function(res,rej) {
+        var States = ["AK","AL","AR","AZ","CA","CO","CT","DC","DE","FL","GA","HI","IA","ID", "IL","IN","KS","KY","LA","MA","MD","ME","MI","MN","MO","MS","MT","NC","ND","NE","NH","NJ","NM","NV","NY", "OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VA","VT","WA","WI","WV","WY"];
+        var prevState = "";
+        var path = "http://localhost:8000/state/";
+
+        for (i =0; i < States.length; i++){
+            if (States[i] === state){
+               
+                index = (i-1)%51;
+                if (States[i] === "AK"){
+                    index = 50;
+                }
+                prevState = prevState + States[index];
+            }
+        }
+     
+        prevState = path+prevState;
+        res(prevState);
+    });
+}
+
+function getNextState(state){
+    return new Promise( function(res,rej) {
+        var States = ["AK","AL","AR","AZ","CA","CO","CT","DC","DE","FL","GA","HI","IA","ID", "IL","IN","KS","KY","LA","MA","MD","ME","MI","MN","MO","MS","MT","NC","ND","NE","NH","NJ","NM","NV","NY", "OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VA","VT","WA","WI","WV","WY"];
+        var nextState = "";
+        var path = "http://localhost:8000/state/";
+
+        for (i =0; i < States.length; i++){
+            if (States[i] === state){
+               
+                index = (i+1)%51; //not sure why mod doesnt work but for if is fine i guess
+                //console.log("index" + index);
+                if (States[i] === "WY"){
+                    index = 0;
+                }
+                nextState = nextState + States[index];
+               // console.log("State" + nextState);
+            }
+        }
+     
+        nextState = path+nextState;
+        //console.log("path" + nextState);
+        res(nextState);
+    });
+}
+
+//------------------Get prev and next for YEAR------------------------------------
+
+function getPrevYear(year){
+    return new Promise( function(res,rej) {
+        var Years = [];
+        var start = 1960
+        var prevYear = 0;
+        var index = 0;
+        var path = "http://localhost:8000/year/";
+        var yearPath = "";
+
+        //create a years array
+        for(j = 0; j<58; j++){
+            Years.push(start)
+            start = start +1;
+        }
+
+        for (i =0; i < Years.length; i++){
+            if (Years[i].toString() === year){      
+                index = (i-1)%58; //not sure why mod doesnt work but for if is fine i guess
+                if (Years[i].toString() === "1960"){
+                    index = 57;
+                }
+                prevYear = prevYear + Years[index];
+            }
+        }
+        yearPath = prevYear.toString();
+        yearPath = path+yearPath;
+        
+        res(yearPath);
+    });
+}
+
+function getNextYear(year){
+    return new Promise( function(res,rej) {
+        var Years = [];
+        var start = 1960
+        var nextYear = 0;
+        var index = 0;
+        var path = "http://localhost:8000/year/";
+        var yearPath = "";
+
+        //create a years array
+        for(j = 0; j<58; j++){
+            Years.push(start)
+            start = start +1;
+        }
+
+        for (i =0; i < Years.length; i++){
+            if (Years[i].toString() === year){      
+                index = (i+1)%58; //not sure why mod doesnt work but for if is fine i guess
+                if (Years[i].toString() === "2017"){
+                    index = 0;
+                }
+                nextYear = nextYear + Years[index];
+            }
+        }
+        yearPath = nextYear.toString();
+        yearPath = path+yearPath;
+        
+        res(yearPath);
+    });
+}
+
+
 //------------------Dynamic Tables (Year State and Energy)----------------
 
 function GetConsumptionForIndexTable(year) {
@@ -410,9 +525,9 @@ app.get('/', (req, res) => {
 // GET request handler for '/year/*'
 app.get('/year/:selected_year', (req, res) => {
     ReadFile(path.join(template_dir, 'year.html')).then((template) => {
+        var year = req.params.selected_year;
 
-        Promise.all([CoalTestSql(req.params.selected_year), NaturalGasTestSql(req.params.selected_year), NuclearTestSql(req.params.selected_year), PetroleumTestSql(req.params.selected_year), RenewableTestSql(req.params.selected_year), GetConsumptionForYearTable(req.params.selected_year)]).then((results) => {
-        	console.log(results);
+        Promise.all([CoalTestSql(year), NaturalGasTestSql(year), NuclearTestSql(year), PetroleumTestSql(year), RenewableTestSql(year), GetConsumptionForYearTable(year), getPrevYear(year), getNextYear(year)]).then((results) => {
 
         	if (results[5] == ''){
 
@@ -430,6 +545,10 @@ app.get('/year/:selected_year', (req, res) => {
             template = template.replace('!PETROLEUMCOUNT!', results[3]); 
             template = template.replace('!RENEWABLECOUNT!', results[4]); 
             template = template.replace('!DATAHERE!', results[5]); 
+
+            //prev and next 
+            template = template.replace('!PREV!', results[6]); 
+            template = template.replace('!NEXT!', results[7]); 
 
             let response = template;
             WriteHtml(res, response);
@@ -450,15 +569,16 @@ app.get('/state/:selected_state', (req, res) => {
         var state = req.params.selected_state;
         var states = [];
         var flag = false;
-        States = [ 'AL', 'AK', 'AS', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'DC', 'FM', 'FL', 'GA', 'GU', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MH', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'MP', 'OH', 'OK', 'OR', 'PW', 'PA', 'PR', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VI', 'VA', 'WA', 'WV', 'WI', 'WY' ];
+        var States = ["AK","AL","AR","AZ","CA","CO","CT","DC","DE","FL","GA","HI","IA","ID", "IL","IN","KS","KY","LA","MA","MD","ME","MI","MN","MO","MS","MT","NC","ND","NE","NH","NJ","NM","NV","NY", "OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VA","VT","WA","WI","WV","WY"];
         
+        //Checks if user typed in a valid state
         for (i = 0; i <States.length; i++){
             if(States[i] === state){
                 flag = true; //it is a real state 
             }
         }
 
-        //If user does not input a real state 
+        //If user does not input a real state sends appropriate 404 message
         if (flag != true){
         
             res.writeHead(404, {'Content-Type': 'text/plain'});
@@ -471,7 +591,7 @@ app.get('/state/:selected_state', (req, res) => {
         template = template.replace('noimage', req.params.selected_state);
         template = template.replace('No Image', req.params.selected_state);
 
-        Promise.all([StateCoalTestSql(state), StateNaturalTestSql(state), StateNuclearTestSql(state), StatePetroleumTestSql(state),StateRenewableTestSql(state), GetConsumptionForStateTable(state), GetFullStateName(state)]).then((results) => {
+        Promise.all([StateCoalTestSql(state), StateNaturalTestSql(state), StateNuclearTestSql(state), StatePetroleumTestSql(state),StateRenewableTestSql(state), GetConsumptionForStateTable(state), GetFullStateName(state), getPrevState(state), getNextState(state)]).then((results) => {
                 
             //populate state variables 
             template = template.replace('!COALCOUNT!', results[0]);
@@ -487,6 +607,10 @@ app.get('/state/:selected_state', (req, res) => {
             template = template.replace('!STATE!', results[6]); 
             template = template.replace('!STATENAME!', results[6]); 
 
+            //pev and next 
+            template = template.replace('!PREV!', results[7]);
+            template = template.replace('!NEXT!', results[8]);
+
             let response = template;
             WriteHtml(res, response);
 
@@ -501,8 +625,9 @@ app.get('/state/:selected_state', (req, res) => {
 // GET request handler for '/energy-type/*'
 app.get('/energy-type/:selected_energy_type', (req, res) => {
     ReadFile(path.join(template_dir, 'energy.html')).then((template) => {
-        Promise.all([GetConsumptionForEnergyTable(req.params.selected_energy_type),GetEnergyArray(req.params.selected_energy_type)]).then((results) => {
-			console.log('results: ' + JSON.stringify(results[0]));
+        var energy = req.params.selected_energy_type;
+        Promise.all([GetConsumptionForEnergyTable(energy),GetEnergyArray(energy)]).then((results) => {
+			
 			if (results[0].includes('undefined')){
 
 				res.writeHead(404, {'Content-Type': 'text/plain'});
@@ -510,16 +635,36 @@ app.get('/energy-type/:selected_energy_type', (req, res) => {
 				res.end();
 			}
 
-	  		if(results == []){
-				res.writeHead(404, {'Content-Type': 'text/plain'});
-				res.write('Error: No data for energy type '+ req.params.selected_energy_type);
-				res.end();
-			}
             template = template.toString();
             template = template.replace('!ENERGY!', req.params.selected_energy_type);
             template = template.replace('!ENERGYARRAY!', JSON.stringify(results[1]));
 			template = template.replace('!ENERGYTABLEHERE!', JSON.stringify(results[0]));
-            //variables
+            //console.log(template);
+
+            //prev and next functionality
+       
+            if(energy === 'coal'){
+              template = template.replace('!PREV!', "http://localhost:8000/energy-type/renewable"); 
+              template = template.replace('!NEXT!', "http://localhost:8000/energy-type/natural_gas");  
+            }
+            else if(energy === 'natural_gas'){
+              template = template.replace('!PREV!', "http://localhost:8000/energy-type/coal"); 
+              template = template.replace('!NEXT!', "http://localhost:8000/energy-type/nuclear");  
+            }
+            else if(energy === 'nuclear'){
+              template = template.replace('!PREV!', "http://localhost:8000/energy-type/natural_gas"); 
+              template = template.replace('!NEXT!', "http://localhost:8000/energy-type/petroleum");  
+            }
+            else if(energy === 'petroleum'){
+              template = template.replace('!PREV!', "http://localhost:8000/energy-type/nuclear"); 
+              template = template.replace('!NEXT!', "http://localhost:8000/energy-type/renewable");  
+            }
+            else{
+              template = template.replace('!PREV!', "http://localhost:8000/energy-type/petroleum"); 
+              template = template.replace('!NEXT!', "http://localhost:8000/energy-type/coal");  
+            }
+            
+
 
             //images
             template = template.replace('noimage', req.params.selected_energy_type);
