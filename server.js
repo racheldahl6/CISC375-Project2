@@ -28,7 +28,7 @@ var db = new sqlite3.Database(db_filename, sqlite3.OPEN_READONLY, (err) => {
 
 // -------------------------INDEX VARIABLES----------------------------------
 
-function CoalTestSql(year) {
+function CoalTestSql(year) { //get the coal variable for home page
 
     return new Promise( function(res,rej) {
         coalSum = 0;
@@ -45,7 +45,7 @@ function CoalTestSql(year) {
     });
 }
 
-function NaturalGasTestSql(year) {
+function NaturalGasTestSql(year) { //get natural gas variable for homepage
     return new Promise( function(res,rej) {
         naturalSum = 0;
         let sql = 'SELECT natural_gas FROM consumption WHERE year = ?';
@@ -61,7 +61,7 @@ function NaturalGasTestSql(year) {
     });
 }
 
-function NuclearTestSql(year) {
+function NuclearTestSql(year) { //get nuclear variable for homepage
 
     return new Promise( function(res,rej) {
         nuclearSum = 0;
@@ -78,7 +78,7 @@ function NuclearTestSql(year) {
     });
 }   
 
-function PetroleumTestSql(year) {
+function PetroleumTestSql(year) { //get petroleum variable for home page
     return new Promise( function(res,rej) {
         petroleumSum = 0;
         let sql = 'SELECT petroleum FROM consumption WHERE year = ?';
@@ -94,7 +94,7 @@ function PetroleumTestSql(year) {
     });
 }   
 
-function RenewableTestSql(year) {
+function RenewableTestSql(year) { //get renewable variable for homepage
     return new Promise( function(res,rej) {
         renewableSum = 0;
         let sql = 'SELECT renewable FROM consumption WHERE year = ?';
@@ -111,7 +111,7 @@ function RenewableTestSql(year) {
 }   
 //-----------------------------STATE VARIABLES -----------------------------
 function StateCoalTestSql(state) {
-    return new Promise( function(res,rej) {
+    return new Promise( function(res,rej) { //get coal variable for state page
         var coalSum = [];
 
         let sql = 'SELECT coal FROM consumption WHERE state_abbreviation = ? ORDER BY year';
@@ -132,7 +132,7 @@ function StateCoalTestSql(state) {
     });
 }   
 function StateNaturalTestSql(state) {
-    return new Promise( function(res,rej) {
+    return new Promise( function(res,rej) { //get natural gas variable for state page
         var naturalSum = [];
 
         let sql = 'SELECT natural_gas FROM consumption WHERE state_abbreviation = ? ORDER BY year';
@@ -154,7 +154,7 @@ function StateNaturalTestSql(state) {
 }   
 
 function StateNuclearTestSql(state) {
-    return new Promise( function(res,rej) {
+    return new Promise( function(res,rej) { //get nuclear variable for state page
         var nuclearSum = [];
 
         let sql = 'SELECT nuclear FROM consumption WHERE state_abbreviation = ? ORDER BY year';
@@ -175,7 +175,7 @@ function StateNuclearTestSql(state) {
     });
 } 
 
-function StatePetroleumTestSql(state) {
+function StatePetroleumTestSql(state) { //get petroleum variable for state page
     return new Promise( function(res,rej) {
         var petroleumSum = [];
 
@@ -197,7 +197,7 @@ function StatePetroleumTestSql(state) {
     });
 } 
 
-function StateRenewableTestSql(state) {
+function StateRenewableTestSql(state) { //get renewable variable for state page
     return new Promise( function(res,rej) {
         var renewableSum = [];
 
@@ -245,7 +245,6 @@ function GetEnergyArray(energy)
     })
 
 }
-
 //-----------------Prev and next function for STATE -------------------------------
 
 function getPrevState(state){
@@ -316,7 +315,7 @@ function getPrevYear(year){
             if (Years[i].toString() === year){      
                 index = (i-1)%58; //not sure why mod doesnt work but for if is fine i guess
                 if (Years[i].toString() === "1960"){
-                    index = 57;
+                    index = 0;
                 }
                 prevYear = prevYear + Years[index];
             }
@@ -347,7 +346,7 @@ function getNextYear(year){
             if (Years[i].toString() === year){      
                 index = (i+1)%58; //not sure why mod doesnt work but for if is fine i guess
                 if (Years[i].toString() === "2017"){
-                    index = 0;
+                    index = 57;
                 }
                 nextYear = nextYear + Years[index];
             }
@@ -362,6 +361,7 @@ function getNextYear(year){
 
 //------------------Dynamic Tables (Year State and Energy)----------------
 
+//Funcrion for table on index page
 function GetConsumptionForIndexTable(year) {
     return new Promise( function(res,rej) {
         let sql = 'SELECT * FROM consumption WHERE year = ?';
@@ -501,8 +501,8 @@ app.get('/', (req, res) => {
 
         Promise.all([CoalTestSql(2017), NaturalGasTestSql(2017), NuclearTestSql(2017), PetroleumTestSql(2017), RenewableTestSql(2017), GetConsumptionForIndexTable(2017)]).then((results) => {
             template = template.toString();
-            //results = results[0].replace('!COALCOUNT!', results[1]);
-            //console.log(coalSum);
+            
+            //fills in variables
             template = template.replace('!COALCOUNT!', results[0]);
             template = template.replace('!NATURALCOUNT!', results[1]);  
             template = template.replace('!NUCLEARCOUNT!', results[2]);
@@ -514,9 +514,6 @@ app.get('/', (req, res) => {
             WriteHtml(res, response);
                 
         });
-        //console.log(coal + " COAL SUM ");
-
-        // modify `response` here
         
     }).catch((err) => {
         Write404Error(res);
@@ -531,7 +528,7 @@ app.get('/year/:selected_year', (req, res) => {
 
         Promise.all([CoalTestSql(year), NaturalGasTestSql(year), NuclearTestSql(year), PetroleumTestSql(year), RenewableTestSql(year), GetConsumptionForYearTable(year), getPrevYear(year), getNextYear(year)]).then((results) => {
 
-        	if (results[5] == ''){
+        	if (results[5] == ''){ //handles error for a wrong year input
 
         		res.writeHead(404, {'Content-Type': 'text/plain'});
     			res.write('Error: No data for year ' + req.params.selected_year);
@@ -540,12 +537,17 @@ app.get('/year/:selected_year', (req, res) => {
         	}
             template = template.toString();
             
+            //header
             template = template.replace('!YEAR!', req.params.selected_year);
+
+            //variables
             template = template.replace('!COALCOUNT!', results[0]);
             template = template.replace('!NATURALCOUNT!', results[1]);  
             template = template.replace('!NUCLEARCOUNT!', results[2]);
             template = template.replace('!PETROLEUMCOUNT!', results[3]); 
             template = template.replace('!RENEWABLECOUNT!', results[4]); 
+
+            //dynamic table
             template = template.replace('!DATAHERE!', results[5]); 
 
             //prev and next 
@@ -630,7 +632,7 @@ app.get('/energy-type/:selected_energy_type', (req, res) => {
         var energy = req.params.selected_energy_type;
         Promise.all([GetConsumptionForEnergyTable(energy),GetEnergyArray(energy)]).then((results) => {
 			
-			if (results[0].includes('undefined')){
+			if (results[0].includes('undefined')){ //sends appropriate error if energy type is unknown
 
 				res.writeHead(404, {'Content-Type': 'text/plain'});
 				res.write('Error: No data for energy type '+ req.params.selected_energy_type);
@@ -638,13 +640,17 @@ app.get('/energy-type/:selected_energy_type', (req, res) => {
 			}
 
             template = template.toString();
+
+            //header
             template = template.replace('!ENERGY!', req.params.selected_energy_type);
+
+            //energy variables
             template = template.replace('!ENERGYARRAY!', JSON.stringify(results[1]));
+
+            //energy table
 			template = template.replace('!ENERGYTABLEHERE!', JSON.stringify(results[0]));
-            //console.log(template);
 
             //prev and next functionality
-       
             if(energy === 'coal'){
               template = template.replace('!PREV!', "http://localhost:8000/energy-type/renewable"); 
               template = template.replace('!NEXT!', "http://localhost:8000/energy-type/natural_gas");  
@@ -666,8 +672,6 @@ app.get('/energy-type/:selected_energy_type', (req, res) => {
               template = template.replace('!NEXT!', "http://localhost:8000/energy-type/coal");  
             }
             
-
-
             //images
             template = template.replace('noimage', req.params.selected_energy_type);
             template = template.replace('No Image', req.params.selected_energy_type);
