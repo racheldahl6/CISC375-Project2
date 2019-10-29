@@ -390,7 +390,8 @@ function GetConsumptionForYearTable(year) {
             }
             rows.forEach((row) => {
                 total = total + row.coal + row.natural_gas + row.nuclear + row.petroleum + row.renewable;
-                table += "<tr> "+ "<td>"+ row.state_abbreviation + "</td>" + "<td>"+ row.coal + "</td>" + "<td>"+ row.natural_gas + "</td>" + "<td>" + row.nuclear + "</td>" + "<td>" + row.petroleum+ "</td>"+ "<td>" + row.renewable + "</td>" + "<td>"+ total + "</td>" + "</tr>";  
+                table += "<tr> "+ "<td>"+ row.state_abbreviation + "</td>" + "<td>"+ row.coal + "</td>" + "<td>"+ row.natural_gas + "</td>" + "<td>" + row.nuclear + "</td>" + "<td>" + row.petroleum+ "</td>"+ "<td>" + row.renewable + "</td>" + "<td>"+ total + "</td>" + "</tr>"; 
+				total=0;
             });
             res(table);
         });
@@ -413,6 +414,7 @@ function GetConsumptionForStateTable(state) {
                 //console.log(row);
                 total = total + row.coal + row.natural_gas + row.nuclear + row.petroleum + row.renewable;
                 table += "<tr> "+ "<td>"+ row.year + "</td>" + "<td>"+ row.coal + "</td>" + "<td>"+ row.natural_gas + "</td>" + "<td>" + row.nuclear + "</td>" + "<td>" + row.petroleum+ "</td>"+ "<td>" + row.renewable + "</td>" + "<td>"+ total + "</td>" + "</tr>";  
+				total=0;
             });
             res(table);
         });
